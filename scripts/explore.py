@@ -1,3 +1,5 @@
+# SCRATCH: one-off exploration, not used by the pipeline
+
 import json
 
 

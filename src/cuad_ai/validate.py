@@ -1,3 +1,5 @@
+# Trust layer: checks that a quote the AI gave really exists in the contract.
+
 def normalize(text: str) -> str:
     return " ".join(text.split())
 

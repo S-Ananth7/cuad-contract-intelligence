@@ -101,3 +101,5 @@ data/ and notes/
 
 data/CUADv1.json  the 510 contracts and lawyers' answers. Not in Git.
 notes/decisions.md  your engineering diary: what you chose and why.
+
+provider Google AI Studio, model gemini-3.8-flash.

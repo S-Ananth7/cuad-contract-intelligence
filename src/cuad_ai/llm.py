@@ -18,7 +18,7 @@ def make_client() -> OpenAI:
         api_key=os.environ["LLM_API_KEY"],
         base_url=os.environ["LLM_BASE_URL"],
         max_retries=0,
-        timeout=180
+        timeout=90
     )
 
 

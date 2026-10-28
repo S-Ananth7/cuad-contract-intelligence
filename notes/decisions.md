@@ -103,3 +103,11 @@ data/CUADv1.json  the 510 contracts and lawyers' answers. Not in Git.
 notes/decisions.md  your engineering diary: what you chose and why.
 
 provider Google AI Studio, model gemini-3.8-flash.
+
+## Eval v1: Governing Law, dev pile (30 contracts)
+Question: can the model find the clause, with a real quote?
+Measures: recall, precision, invented quotes, errors, seconds, tokens.
+Targets (fill in): recall >= __ , invented quotes = __ , errors <= __
+Limits: 30 contracts is noisy. The key has quotes only, so 'value' is checked by eye.
+
+write your three targets in decisions.md: a recall target, a maximum for invented quotes, and a maximum for errors.

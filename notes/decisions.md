@@ -81,3 +81,9 @@ Limits: 30 contracts is noisy. One miss moves recall about 4.5 points. A small g
 4. Prompt v2 from real mistakes (exact not-found JSON, two examples). One change per run.
 5. Keyword baseline. Two-model comparison. Test pile once.
 6. Four more clauses. README. CLI or small API.
+
+
+Baseline v1 on dev: recall 1.0, precision 0.957, right sentence 20 of 22.
+Baseline v2 on dev (rules tightened after seeing v1 errors): recall 0.864, precision 1.0, right sentence 19 of 22.
+Trade-off: stricter rules fixed 2 wrong quotes and 1 false alarm, but lost 3 clauses.
+Both scores are optimistic because the rules were tuned on dev. Honest numbers come from the locked test pile.

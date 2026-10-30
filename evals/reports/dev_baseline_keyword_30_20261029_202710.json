@@ -1,0 +1,507 @@
+{
+  "meta": {
+    "method": "keyword-baseline",
+    "clause": "Governing Law",
+    "date": "2026-10-29",
+    "contracts": 30
+  },
+  "summary": {
+    "contracts": 30,
+    "errors": 0,
+    "tp": 22,
+    "fp": 1,
+    "fn": 0,
+    "tn": 7,
+    "recall": 1.0,
+    "recall_errors_as_misses": 1.0,
+    "precision": 0.957,
+    "invented_quotes": 0,
+    "quote_matches_lawyers": 20,
+    "avg_tokens_in": 0.0,
+    "avg_tokens_out": 0.0,
+    "avg_seconds": 0.0
+  },
+  "rows": [
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "Governing Law and Jurisdiction This Agreement shall be governed by and construed in accordance with Swiss law."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0015229999999064603,
+      "attempts": 0,
+      "error": null,
+      "title": "LECLANCHE\u0301 S.A. - JOINT DEVELOPMENT AND MARKETING AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "If Customer desires to purchase or lease goods from IBM, such purchase or lease will be governed by a separate mutually acceptable written agreement between Customer and IBM or an IBM Affiliate.",
+        "Page 8 of 36 Choice of Law Source: QUANTUM GROUP INC /FL, 8-K, 1/20/2009 Choice of Law This Agreement will be governed by the substantive laws of the State of New York, without regard for its conflict of laws provisions."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.008128899999974237,
+      "attempts": 0,
+      "error": null,
+      "title": "QuantumGroupIncFl_20090120_8-K_EX-99.2_3672910_EX-99.2_Hosting Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "Governing Law.",
+        "This Agreement shall be governed by and interpreted under and in accordance with the laws of the State of Delaware without regard to principles of conflicts of laws.",
+        "Compliance with Governing Laws: Buyer warrants that its performance hereunder, including the use of the products hereunder, shall comply with all applicable state, federal and foreign law, regulations, environmental regulations, statutes or requirements, including, but not limited to, FDA approvals or any other approvals or certifications required by law 7."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.004429800000252726,
+      "attempts": 0,
+      "error": null,
+      "title": "NANOPHASETECHNOLOGIESCORP_11_01_2005-EX-99.1-DISTRIBUTOR AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "ARTICLE XV - MISCELLANEOUS 15.1 THE INTERPRETATION AND PERFORMANCE OF THIS CONTRACT SHALL BE IN ACCORDANCE WITH AND CONTROLLED BY THE LAWS OF THE STATE OF TEXAS, WITHOUT REGARD TO THE DOCTRINES GOVERNING CHOICE OF LAW."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0012759999999616412,
+      "attempts": 0,
+      "error": null,
+      "title": "KENTUCKYUTILITIESCO_03_25_2003-EX-10.65-TRANSPORTATION AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "ARTICLE XII GOVERNING LAW AND DISPUTE RESOLUTION 12.1 The execution, effect, interpretation and performance of this Agreement and resolution of any dispute arising from this Agreement will be governed by PRC Laws."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0019001000000571366,
+      "attempts": 0,
+      "error": null,
+      "title": "LEJUHOLDINGSLTD_03_12_2014-EX-10.34-INTERNET CHANNEL COOPERATION AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "This Agreement and the rights and duties of Transporter and Shipper hereunder shall be governed by and interpreted in accordance with the laws of the State of Arkansas, without recourse to the law governing conflict of laws."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.00102950000018609,
+      "attempts": 0,
+      "error": null,
+      "title": "ATMOSENERGYCORP_11_22_2002-EX-10.17-TRANSPORTATION SERVICE AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "This Agreement will be governed by the laws of the State of Florida without regard to conflicts of law provisions."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0016420000001744484,
+      "attempts": 0,
+      "error": null,
+      "title": "GlobalTechnologiesGroupInc_20050928_10KSB_EX-10.9_4148808_EX-10.9_Content License Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "This Agreement shall be governed and construed in accordance with the laws of the State of Delaware, without reference to the conflicts of laws principles thereunder."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0027924999994866084,
+      "attempts": 0,
+      "error": null,
+      "title": "IGENEBIOTECHNOLOGYINC_05_13_2003-EX-1-JOINT VENTURE AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "Law and jurisdiction This Agreement shall be governed by and construed in all respects in accordance with the law of England and Wales and both parties submit to the exclusive jurisdiction of the English Courts."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.003973900000346475,
+      "attempts": 0,
+      "error": null,
+      "title": "SMITHELECTRICVEHICLESCORP_04_04_2012-EX-10.26-FLEET MAINTENANCE AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "MISCELLANEOUS 51 9.1 Interpretation 51 9.2 Assignment 51 9.3 Further Actions 51 9.4 Force Majeure 51 9.5 Notices 52 9.6 Amendment 53 9.7 Waiver 53 9.8 Severability 53 9.9 Descriptive Headings 53 9.10 Governing Law 53 9.11 Dispute Resolution 53 9.12 Entire Agreement of the Parties 54 9.13 Independent Contractors 54 9.14 No Legal Advice 54 9.15 Counterparts 54 EXHIBITS Exhibit 1.24 - Cost of Sales Exhibit 1.39 - Exact Trademarks Exhibit 2.2(c)(iv) - Calendar Quarter Performance Metrics Exhibit 3.2(c)(i) - Sales Deployment Plan Exhibit 3.3(b) - Annual Marketing Plan Outline Exhibit 3.4(a) - Promotion Fee Reduction Exhibit 7.4 - Press Release Source: EXACT SCIENCES CORP, 8-K, 8/22/2018 Exhibit 8.8(b) - Tail Period Advertising Services ii Source: EXACT SCIENCES CORP, 8-K, 8/22/2018 AGREEMENT This Agreement (the \"Agreement\") is made and entered into as of August 21, 2018 (the \"Effective Date\"), by and between Pfizer Inc.",
+        "9.10 Governing Law.",
+        "This Agreement shall be governed by and interpreted in accordance with the substantive laws of the State of New York, without regard to conflict of law principles thereof."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.05234500000005937,
+      "attempts": 0,
+      "error": null,
+      "title": "ExactSciencesCorp_20180822_8-K_EX-10.1_11331629_EX-10.1_Promotion Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "MISCELLANEOUS 15.1 Governing Law; English Language."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.005162899999959336,
+      "attempts": 0,
+      "error": null,
+      "title": "EtonPharmaceuticalsInc_20191114_10-Q_EX-10.1_11893941_EX-10.1_Development Agreement",
+      "gold_found": true,
+      "quote_match": false
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "8 Source: ALLIED ESPORTS ENTERTAINMENT, INC., 8-K, 8/15/2019 15.10 Governing Law and Jurisdiction.",
+        "Without reference to choice or conflict of law principles, this Agreement shall be governed by and construed in accordance with the laws of the State of California, USA."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.005019899999751942,
+      "attempts": 0,
+      "error": null,
+      "title": "AlliedEsportsEntertainmentInc_20190815_8-K_EX-10.34_11788308_EX-10.34_Sponsorship Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "SutroVax represents and warrants the following: 7.1.1 SutroVax is a corporation duly organized, validly existing and in good standing under the laws of the State of Delaware.",
+        "Sutro represents and warrants the following: 7.2.1 Sutro is a corporation duly organized, validly existing and in good standing under the laws of the State of Delaware.",
+        "12.11 This Supply Agreement shall be governed by, and construed and enforced in accordance with, the laws of the State of California, without regard to any conflict of laws rules to the contrary."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.00727660000029573,
+      "attempts": 0,
+      "error": null,
+      "title": "VAXCYTE,INC_05_22_2020-EX-10.19-SUPPLY AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "Regardless of the place of execution hereof, this Agreement, all amendments hereto, and any and all issues or controversies arising here from or related hereto, shall be governed by and construed exclusively in accordance with the laws and decisions of the State of Michigan."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.000991500000054657,
+      "attempts": 0,
+      "error": null,
+      "title": "EcoScienceSolutionsInc_20171117_8-K_EX-10.1_10956472_EX-10.1_Endorsement Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "Governing Law: This Agreement is subject to and shall be construed in accordance with the laws of the Commonwealth of Virginia with jurisdiction and venue in federal and Virginia courts in Alexandria and Arlington, Virginia."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.00374290000036126,
+      "attempts": 0,
+      "error": null,
+      "title": "FreezeTagInc_20180411_8-K_EX-10.1_11139603_EX-10.1_Sponsorship Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "36 INTERPRETATION OF THE AGREEMENT AND SETTLEMENT OF DISPUTES 36.1 The construction, interpretation and performance of this Agreement shall be governed by the laws of Switzerland, except for its conflicts of law principles."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.006279400000494206,
+      "attempts": 0,
+      "error": null,
+      "title": "STARTECGLOBALCOMMUNICATIONSCORP_11_16_1998-EX-10.30-CONSTRUCTION AND MAINTENANCE AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "In the case of ArTara, Notice should be sent to: ArTara Therapeutics 1 Little West 12t h Street NY, NY 10014 12 Source: ARTARA THERAPEUTICS, INC., 8-K, 1/10/2020 Attention: Jesse Shefferman In the case of University, Notice should be sent to: The University of Iowa c/o Division of Sponsored Programs 2 Gilmore Hall Iowa City, IA 52242 Attention: [\u2026***\u2026] 9.4 Governing Law.",
+        "This Agreement shall be governed by the laws of the State of Iowa."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0029356999993979116,
+      "attempts": 0,
+      "error": null,
+      "title": "ArtaraTherapeuticsInc_20200110_8-K_EX-10.5_11943350_EX-10.5_License Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "(a) Hydron is a corporation in good standing under the laws of the state of New York and is duly authorized to transact business in Florida, with full power and authority to enter into and fully perform its obligations under this Agreement.",
+        "6.2 The Dolphins represents and warrants to Hydron the following, all of 4 which representations and warranties shall apply during the Term of this Agreement (a) The Dolphins is a Florida limited partnership in good standing under the laws of the State of Florida and the Dolphins is duly authorized to transact business in Florida, with full power and authority to enter into and fully perform its obligations under this Agreement.",
+        "9.5 This Agreement shall be governed by and construed in accordance with the laws of the State of Florida."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.003871699999763223,
+      "attempts": 0,
+      "error": null,
+      "title": "HYDRONTECHNOLOGIESINC_03_31_1997-EX-10.47-SPONSORSHIP AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "Governing Law.",
+        "This Agreement shall be governed by and construed in accordance with the laws of the Province of British Columbia (without regard to its conflict of laws provisions) which shall be deemed to be the proper law thereof."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0013935999995737802,
+      "attempts": 0,
+      "error": null,
+      "title": "KNOWLABS,INC_08_15_2005-EX-10-INTELLECTUAL PROPERTY AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "GOVERNING LAW Any lawsuit relating to any matter arising under this Agreement may be initiated in a State or Federal Court located in the Commonwealth of Massachusetts or in any court in the Netherlands having jurisdiction over the matter."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0005391000004237867,
+      "attempts": 0,
+      "error": null,
+      "title": "DRAGONSYSTEMSINC_01_08_1999-EX-10.17-OUTSOURCING AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "MISCELLANEOUS PROVISIONS 22.1 Governing Law 22.2 Venue and Jurisdiction 22.3 Entire Agreement; Amendments 22.4 Assignment 22.5 Relationship of Parties 22.6 Notices 22.7 Headings 22.8 Counterparts 22.9 Waiver 22.10 Severability 22.11 Attorneys' Fees and Costs 22.12 Financial Statements 22.13 Publicity 22.14 Solicitation 22.15 No Third Party Beneficiaries 22.16 Construction 23.",
+        "It is a corporation validly existing and in good standing under the laws of the State of its incorporation; B.",
+        "MISCELLANEOUS PROVISIONS 22.1 Governing Law."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.008623200000329234,
+      "attempts": 0,
+      "error": null,
+      "title": "TRICITYBANKSHARESCORP_05_15_1998-EX-10-OUTSOURCING AGREEMENT",
+      "gold_found": true,
+      "quote_match": false
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "IN CONSIDERATION OF and as a condition of the JVP entering into this Agreement and other valuable consideration, the receipt and sufficiency of which consideration is acknowledged, the parties to this Agreement agree as follows: Formation By this Agreement the Participants enter into a general Joint Venture (the \"Joint Venture\") in accordance with the laws of The State of Florida."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0013564000000769738,
+      "attempts": 0,
+      "error": null,
+      "title": "MJBIOTECH,INC_12_06_2018-EX-99.01-JOINT VENTURE AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.00012690000039583538,
+      "attempts": 0,
+      "error": null,
+      "title": "WatchitMediaInc_20061201_8-K_EX-10.1_4148672_EX-10.1_Content License Agreement",
+      "gold_found": false,
+      "quote_match": false
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 7.809999988239724e-05,
+      "attempts": 0,
+      "error": null,
+      "title": "RMRGROUPINC_01_22_2020-EX-99.1-JOINT FILING AGREEMENT",
+      "gold_found": false,
+      "quote_match": false
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0016236000001299544,
+      "attempts": 0,
+      "error": null,
+      "title": "BizzingoInc_20120322_8-K_EX-10.17_7504499_EX-10.17_Endorsement Agreement",
+      "gold_found": false,
+      "quote_match": false
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.000398000000132015,
+      "attempts": 0,
+      "error": null,
+      "title": "SOLUTIONSVENDINGINTERNATIONAL,INC_03_31_2020-EX1A-1 UNDR AGMT-SERVICES AGREEMENT",
+      "gold_found": false,
+      "quote_match": false
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.00024680000024090987,
+      "attempts": 0,
+      "error": null,
+      "title": "SalesforcecomInc_20171122_10-Q_EX-10.1_10961535_EX-10.1_Reseller Agreement",
+      "gold_found": false,
+      "quote_match": false
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.0030428999998548534,
+      "attempts": 0,
+      "error": null,
+      "title": "IDREAMSKYTECHNOLOGYLTD_07_03_2014-EX-10.39-Cooperation Agreement on Mobile Game Business",
+      "gold_found": false,
+      "quote_match": false
+    },
+    {
+      "found": true,
+      "value": null,
+      "quotes": [
+        "Nothing contained in Section 4.1(a) or Section 4.1(b) shall release any Person from: (i) any Liability, contingent or otherwise, assumed, transferred, assigned or allocated to the Group of which such Person is a member in accordance with, or any other Liability of any member of any Group under, this Agreement; (ii) any Liability that the Parties may have with respect to indemnification or contribution or other obligation pursuant to this Agreement for claims brought against the Parties by third Persons, which Liability shall be governed by the provisions of the Separation Agreement; or (iii) any Liability the release of which would result in the release of any Person other than a Person released pursuant to this Section 4.1.",
+        "The terms and conditions set forth in Section 10.2 (Governing Law) through Section 10.19 (Mutual Drafting) of the Separation Agreement are hereby incorporated into this Section 8 as if fully set forth herein."
+      ],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.004172799999651033,
+      "attempts": 0,
+      "error": null,
+      "title": "INGEVITYCORP_05_16_2016-EX-10.5-INTELLECTUAL PROPERTY AGREEMENT",
+      "gold_found": false,
+      "quote_match": false
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "seconds": 0.00047029999950609636,
+      "attempts": 0,
+      "error": null,
+      "title": "ZONDWINDSYSTEMPARTNERSLTDSERIES85-B_04_03_2006-EX-10-MANAGEMENT AND MAINTENANCE AGREEMENT",
+      "gold_found": false,
+      "quote_match": false
+    }
+  ]
+}

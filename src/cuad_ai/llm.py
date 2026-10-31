@@ -10,6 +10,8 @@ load_dotenv()
 RETRY_STATUS = {429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 4
 BASE_WAIT_SECONDS = 2
+MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "2000"))
+EXTRA_BODY = {"thinking": {"type": "disabled"}} if os.environ.get("LLM_THINKING") == "off" else None
 
 
 def make_client() -> OpenAI:
@@ -38,7 +40,8 @@ def call_model(prompt: str, client=None, sleep=time.sleep) -> dict:
         try:
             response = client.chat.completions.create(
                 model=os.environ["LLM_MODEL"],
-                max_tokens=2000,
+                max_tokens=MAX_TOKENS,
+                extra_body=EXTRA_BODY,
                 messages=[{"role": "user", "content": prompt}],
             )
         except Exception as error:

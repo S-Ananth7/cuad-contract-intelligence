@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "model": "deepseek-v4-flash",
+    "prompt": "prompts/governing_law_v1.txt",
+    "clause": "Governing Law",
+    "date": "2026-10-31",
+    "contracts": 3
+  },
+  "summary": {
+    "contracts": 3,
+    "errors": 0,
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "tn": 1,
+    "recall": 1.0,
+    "recall_errors_as_misses": 1.0,
+    "precision": 1.0,
+    "invented_quotes": 0,
+    "quote_matches_lawyers": 2,
+    "avg_tokens_in": 9544.0,
+    "avg_tokens_out": 41.0,
+    "avg_seconds": 1.67
+  },
+  "rows": [
+    {
+      "found": true,
+      "value": "Swiss law",
+      "quotes": [
+        "This Agreement shall be governed by and construed in accordance with Swiss law.",
+        "The conflict of law rules and the United Nations Convention on Contracts for the International Sale of Goods do not apply."
+      ],
+      "quotes_real": true,
+      "tokens_in": 4207,
+      "tokens_out": 65,
+      "seconds": 1.7213736999992761,
+      "attempts": 1,
+      "error": null,
+      "title": "LECLANCHE\u0301 S.A. - JOINT DEVELOPMENT AND MARKETING AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": true,
+      "value": "New York",
+      "quotes": [
+        "This Agreement will be governed by the substantive laws of the State of New York, without regard for its conflict of laws provisions."
+      ],
+      "quotes_real": true,
+      "tokens_in": 21927,
+      "tokens_out": 43,
+      "seconds": 1.895197900000312,
+      "attempts": 1,
+      "error": null,
+      "title": "QuantumGroupIncFl_20090120_8-K_EX-99.2_3672910_EX-99.2_Hosting Agreement",
+      "gold_found": true,
+      "quote_match": true
+    },
+    {
+      "found": false,
+      "value": null,
+      "quotes": [],
+      "quotes_real": true,
+      "tokens_in": 2498,
+      "tokens_out": 15,
+      "seconds": 1.3929815000001327,
+      "attempts": 1,
+      "error": null,
+      "title": "ZONDWINDSYSTEMPARTNERSLTDSERIES85-B_04_03_2006-EX-10-MANAGEMENT AND MAINTENANCE AGREEMENT",
+      "gold_found": false,
+      "quote_match": false
+    }
+  ]
+}

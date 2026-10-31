@@ -92,3 +92,10 @@ Baseline v2 misses on dev (3 of 22):
 - Two are wording gaps ("controlled by", "in accordance with the laws of"). A phrase list cannot cover all wording.
 - One is a venue clause that the key labels as Governing Law. It has no governing-law wording at all. Label noise sets a ceiling on any score.
 Decision: do not tune the baseline further on dev. Saved the three contracts in evals/hard_cases.json. Honest comparison happens once on the locked test pile.
+
+22 of 22 is small. A rough 95% lower bound on recall is about 0.85. One new miss would move it to 0.95.
+quote_match is generous. It counts a hit if any quote overlaps a lawyer quote. Extra, unmatched quotes are hidden, like the “conflict of law rules” sentence earlier. Run the quote precision script to see.
+Row 20 needs a look. The lawyers labeled a court-location sentence as Governing Law, and the model “matched” it. Check what it quoted.
+value is not scored yet.
+The model ran once. Models vary from run to run, so run the same 30 again and compare.
+Your prompt was not tuned on dev, so this result is fairer than baseline v2’s. It was written before you saw any dev error.

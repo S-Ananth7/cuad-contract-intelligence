@@ -11,7 +11,7 @@ from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contrac
 from cuad_ai.metrics import quotes_overlap, summarize
 
 CLAUSE = "Governing Law"
-PROMPT_PATH = "prompts/governing_law_v1.txt"
+PROMPT_PATH = "prompts/governing_law_v2.txt"
 PAUSE_SECONDS = 3
 
 

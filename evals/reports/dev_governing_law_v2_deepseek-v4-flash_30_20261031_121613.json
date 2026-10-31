@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "model": "deepseek-v4-flash",
+    "prompt": "prompts/governing_law_v2.txt",
+    "clause": "Governing Law",
+    "date": "2026-10-31",
+    "contracts": 1
+  },
+  "summary": {
+    "contracts": 1,
+    "errors": 0,
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "tn": 0,
+    "recall": 1.0,
+    "recall_errors_as_misses": 1.0,
+    "precision": 1.0,
+    "invented_quotes": 0,
+    "quote_matches_lawyers": 1,
+    "avg_tokens_in": 4567.0,
+    "avg_tokens_out": 32.0,
+    "avg_seconds": 1.25
+  },
+  "rows": [
+    {
+      "found": true,
+      "value": "Switzerland",
+      "quotes": [
+        "This Agreement shall be governed by and construed in accordance with Swiss law."
+      ],
+      "quotes_real": true,
+      "tokens_in": 4567,
+      "tokens_out": 32,
+      "seconds": 1.2484023000006346,
+      "attempts": 1,
+      "error": null,
+      "title": "LECLANCHE\u0301 S.A. - JOINT DEVELOPMENT AND MARKETING AGREEMENT",
+      "gold_found": true,
+      "quote_match": true
+    }
+  ]
+}

@@ -87,3 +87,8 @@ Baseline v1 on dev: recall 1.0, precision 0.957, right sentence 20 of 22.
 Baseline v2 on dev (rules tightened after seeing v1 errors): recall 0.864, precision 1.0, right sentence 19 of 22.
 Trade-off: stricter rules fixed 2 wrong quotes and 1 false alarm, but lost 3 clauses.
 Both scores are optimistic because the rules were tuned on dev. Honest numbers come from the locked test pile.
+
+Baseline v2 misses on dev (3 of 22):
+- Two are wording gaps ("controlled by", "in accordance with the laws of"). A phrase list cannot cover all wording.
+- One is a venue clause that the key labels as Governing Law. It has no governing-law wording at all. Label noise sets a ceiling on any score.
+Decision: do not tune the baseline further on dev. Saved the three contracts in evals/hard_cases.json. Honest comparison happens once on the locked test pile.

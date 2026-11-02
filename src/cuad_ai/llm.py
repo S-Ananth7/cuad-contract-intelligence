@@ -2,8 +2,7 @@ import os
 import time
 
 from dotenv import load_dotenv
-from openai import OpenAI
-from openai._exceptions import APIConnectionError
+from openai import APIConnectionError, OpenAI
 
 load_dotenv()
 

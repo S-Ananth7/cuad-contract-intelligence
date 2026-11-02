@@ -1,0 +1,5 @@
+{
+    "min_recall": 0.9,
+    "max_invented_quotes": 0,
+    "max_error_rate": 0.1
+}

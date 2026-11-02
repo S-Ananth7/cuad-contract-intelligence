@@ -9,7 +9,7 @@ STRONG_PHRASES = (
     "shall be governed",
     "governed by",
     "governed, interpreted",
-    "construed in accordance with",
+    "contributed in accordance with",
     "interpreted in accordance with",
 )
 MAX_SECTION_NUMBERS = 2
@@ -25,7 +25,7 @@ def is_clause_like(sentence: str) -> bool:
     return any(phrase in lowered for phrase in STRONG_PHRASES)
 
 
-def keyword_governing_law_v2(contract_text: str, max_quotes: int = 3) -> dict:
+def keyword_governing_law_v2(contract_text: str, max_quotes: int=3) -> dict:
     """Free baseline v2: only sentences that state a governing-law rule. No model."""
     start = time.perf_counter()
     quotes = [s for s in split_sentences(contract_text) if is_clause_like(s)][:max_quotes]

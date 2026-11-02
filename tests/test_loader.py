@@ -1,4 +1,4 @@
-from cuad_ai.loader import get_contract, get_text, find_question, get_gold_quotes
+from cuad_ai.loader import find_question, get_contract, get_gold_quotes, get_text
 
 FAKE = [
     {
@@ -8,13 +8,11 @@ FAKE = [
                 "context": "governed by Texas law",
                 "qas": [
                     {
-                        "id": "A_Governing Law",
+                        "id": "A__Governing Law",
                         "is_impossible": False,
-                        "answers": [
-                            {"text": "governed by Texas law", "answer_start": 0}
-                        ],
+                        "answers": [{"text": "governed by Texas law", "answer_start": 0}],
                     },
-                    {"id": "A__Expiration Date", "is_impossile": True, "answers": []},
+                    {"id": "A__Expiration Date", "is_impossible": True, "answers": []},
                 ],
             }
         ],
@@ -31,11 +29,18 @@ def test_get_text():
     assert get_text(FAKE[0]) == "governed by Texas law"
 
 
-def test_find_question():
+def test_find_question_present_and_missing():
     assert find_question(FAKE[0], "Governing Law") is not None
-    assert find_question(FAKE[0], "Cap on Liability") is None
+    assert find_question(FAKE[0], "Cap On Liability") is None
 
 
-def test_gold_quotes():
+def test_gold_quotes_when_clause_has_answers():
     assert get_gold_quotes(FAKE[0], "Governing Law") == ["governed by Texas law"]
-    assert get_gold_quotes(FAKE[0], "Expiration Dtae") == []
+
+
+def test_gold_quotes_when_clause_is_absent_in_the_key():
+    assert get_gold_quotes(FAKE[0], "Expiration Date") == []
+
+
+def test_gold_quotes_when_clause_does_not_exist():
+    assert get_gold_quotes(FAKE[0], "Cap On Liability") == []

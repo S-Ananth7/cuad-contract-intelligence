@@ -5,13 +5,15 @@ import time
 from datetime import date
 from pathlib import Path
 
+from cuad_ai.cache import cached
 from cuad_ai.clauses import clause_questions, make_clause_prompt
 from cuad_ai.extract import extract_governing_law, load_prompt
+from cuad_ai.llm import call_model
 from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contracts, load_splits
 from cuad_ai.metrics import quotes_overlap, summarize
 from cuad_ai.runlog import RUNS_DIR, find_run, load_report, log_run, new_run_id, run_info, write_report
 
-TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "prompts/clause_v1.txt")
+TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "prompts/clause.txt")
 CORE = ["Governing Law", "Effective Date", "Anti-Assignment", "Termination For Convenience", "Cap On Liability"]
 PAUSE_SECONDS = float(os.environ.get("PAUSE_SECONDS", "0.2"))
 SECONDS_PER_CALL = float(os.environ.get("SECONDS_PER_CALL", "1.6"))
@@ -83,6 +85,7 @@ def main():
         return
 
     template = load_prompt(TEMPLATE_PATH)
+    call = cached(call_model, enabled=not os.environ.get("NO_CACHE"))
     model = os.environ.get("LLM_MODEL", "unknown")
     info = run_info(template)
     label = choice if choice in ("core", "all") else "custom"
@@ -112,7 +115,7 @@ def main():
                 if (title, clause) in done:
                     continue
                 gold = get_gold_quotes(contract, clause)
-                row = extract_governing_law(text, make_clause_prompt(template, clause, questions[clause]))
+                row = extract_governing_law(text, make_clause_prompt(template, clause, questions[clause]), call=call)
                 row["title"], row["clause"] = title, clause
                 row["gold_found"] = len(gold) > 0
                 row["quote_match"] = quotes_overlap(row["quotes"], gold)

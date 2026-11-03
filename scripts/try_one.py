@@ -14,7 +14,7 @@ contract = get_contract(contracts, title)
 
 row = extract_governing_law(
     get_text(contract),
-    load_prompt("prompts/governing_law_v1.txt")
+    load_prompt("prompts/governing_law.txt")
 )
 
 print("TITLE:", title)

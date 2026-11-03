@@ -3,20 +3,36 @@ import time
 
 from cuad_ai.validate import normalize, quote_in_contract
 
-PHRASES = ("governed by", "governing law", "contributed in accordinate with", "laws of the state of")
+# Phrases that state a rule. Headings and boilerplate do not contain them.
+STRONG_PHRASES = (
+    "shall be governed",
+    "governed by",
+    "governed, interpreted",
+    "construed in accordance with",
+    "interpreted in accordance with",
+)
+MAX_SECTION_NUMBERS = 2
+
 
 def split_sentences(text: str) -> list[str]:
     """Rough sentence split on . ! ? followed by a space. Abbreviations like 'Inc.' split wrongly."""
-    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", normalize(text)) if s.strip()] 
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", normalize(text)) if s.strip()]
+
+
+def is_clause_like(sentence: str) -> bool:
+    """True if the sentence states a governing-law rule, not a heading, a contents line, or a pointer."""
+    lowered = sentence.lower()
+    if len(re.findall(r"\b\d+\.\d+\b", sentence)) > MAX_SECTION_NUMBERS:
+        return False
+    if not re.search(r"\blaws?\b", lowered):
+        return False
+    return any(phrase in lowered for phrase in STRONG_PHRASES)
+
 
 def keyword_governing_law(contract_text: str, max_quotes: int = 3) -> dict:
-    """Free baseline: return the first sentences that contain a governing-law phrase. No model."""
+    """Free baseline: only sentences that state a governing-law rule. No model."""
     start = time.perf_counter()
-    quotes = [
-        sentence
-        for sentence in split_sentences(contract_text)
-        if any(phrase in sentence.lower() for phrase in PHRASES)
-    ][:max_quotes]
+    quotes = [s for s in split_sentences(contract_text) if is_clause_like(s)][:max_quotes]
     return {
         "found": len(quotes) > 0,
         "value": None,

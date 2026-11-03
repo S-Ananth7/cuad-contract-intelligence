@@ -1,101 +1,110 @@
-# Decisions: CUAD contract intelligence
+# Architecture and Decisions: CUAD Contract Intelligence
 
-Last updated: 2026-10-29
+Last updated: 2026-11-02
 
-## Problem
-Lawyers read hundreds of contracts by hand. Slow and costly.
-Build a tool that finds key clauses and shows the exact quote.
+## 1. Purpose
+Extract key clauses from commercial contracts, quote the exact sentence, and verify that each quote exists in the source text. Output supports first-pass review by an in-house lawyer during due diligence.
 
-## User
-In-house lawyer doing due diligence.
+## 2. Scope
+| In scope | Out of scope (for now) |
+|---|---|
+| 41 CUAD clause types | Legal advice or interpretation |
+| Exact-quote extraction with verification | Contracts outside CUAD |
+| Offline evaluation against the CUAD answer key | Production serving, authentication, UI |
+| Postgres + pgvector storage and retrieval | Fine-tuning |
 
-## Scope
-First clause: Governing Law. Four more clauses after the first one works end to end.
+## 3. System flow
+```
+contract text -> prompt -> model -> parse reply -> validate form -> verify quotes -> result row -> score against answer key
+```
 
-## Flow
-contract text -> prompt -> model -> parse reply -> check form -> check quotes -> row -> score against the lawyers' key
+## 4. Output contract
+| Field | Type | Rule |
+|---|---|---|
+| found | bool | false means quotes empty and value null |
+| quotes | list of string | each quote must appear verbatim in the contract (whitespace-insensitive); empty quotes rejected |
+| value | string or null | state or country; must be derived from a quote (not yet enforced) |
 
-## Answer form
-- found: true or false
-- quotes: list of exact sentences from the contract
-- value: state or country, for example "Delaware", or null
+`found = true` with no quotes counts as no proof. The model never receives the answer key.
 
-## Rules
-- Not found: found is false, quotes is empty, value is null.
-- Several governing law sentences: put all of them in quotes.
-- Every quote must appear word for word in the contract. Extra spaces and line breaks are ignored. An empty quote is rejected.
-- found true with no quotes counts as no proof (quotes_real is false).
-- Value must come from a quote. Not enforced in code yet. Only quotes_real is checked.
+## 5. Data
+- CUAD v1: 510 contracts, 41 clause types, 20,910 questions (6,702 present, 14,208 absent), 13,823 highlights.
+- Official split: 408 train, 102 test, disjoint.
+- Governing Law: 437 present, 73 absent, 464 annotated quotes, all at recorded offsets. The key has quotes only, no value.
+- License CC BY 4.0 (cite the authors). Contracts are public SEC filings.
 
-## Data (CUAD v1)
-- 510 contracts. Governing Law: 437 present, 73 absent.
-- 464 lawyer quotes, 0 position mismatches. The key is clean for this clause.
-- The key has quotes only, no value. Check about 10 values by eye.
-- The files are public SEC filings. Check the license before sharing.
+## 6. Evaluation protocol
+- Dev set of 30 contracts and test set of 30 (22 positive, 8 negative each). No company appears in both. The test set is locked until the final run.
+- Known defect: `evals/test_set_multi.json` overlaps dev by 5 contracts. Resolve before use.
+- Acceptance targets (fixed before any score was seen):
 
-## Split
-- Dev 30 (22 present, 8 absent). Test 30 (22 present, 8 absent). Test is locked until the final run.
-- Seed: TODO (write the final seed from scripts/make_split.py).
-- Seed 42 leaked twin contracts across piles (Bellring, NETGEAR, Gridiron). Final split has no company in both.
+| Metric | Target | Rationale |
+|---|---|---|
+| Recall | >= 0.90 | A miss costs a reviewer more than a false alarm |
+| Invented quotes | 0 | A fabricated quote defeats the purpose of the tool |
+| Failed calls | <= 10% | An unreliable tool is not usable |
 
-## Eval v1: Governing Law, dev pile
-Question: can the model find the clause, with a real quote?
-Measures: recall (with and without counting failed calls), precision, invented quotes, failed calls, tokens, seconds.
-Targets, set before seeing any score (proposed, change if you disagree):
-- Recall >= 0.90, because a miss costs a lawyer more than a false alarm.
-- Invented quotes = 0, because a made-up quote breaks the point of the tool.
-- Failed calls <= 10%, because a flaky tool is not usable.
-TODO: write your own reason beside each target.
-Limits: 30 contracts is noisy. One miss moves recall about 4.5 points. A small gap between two prompts or models is noise.
+- Recall is reported both excluding and including failed calls.
+- Limitation: at 10 to 30 contracts, one miss moves recall by several points.
 
-## Model and provider
-- Provider: Google AI Studio via the OpenAI-compatible endpoint. Model: gemini-3.8-flash.
-- Confirmed working: TODO (yes or no). Earlier calls timed out.
-- History: Oxion gave 503 (outage). Mistral gave 429 (free-tier limit). Google calls took about 56 to 63 seconds.
-- Free-tier prompts may be used for training. Public contracts only. A real client needs a provider with proper data terms.
+## 7. Results
+**Governing Law, dev (30 contracts)**
 
-## Measured so far
-- One contract call (LECLANCHE, 4,371 tokens in): 56.3 s, correct answer, quote matched the lawyers.
-- Call times seen: 61.4 s, 63.0 s, 56.3 s.
-- Dev contract length in characters: 645 shortest, 37,031 median, 159,187 longest. About 4 characters per token.
-- Tests: 32 passed (loader, validate, llm, extract, metrics).
+| Method | Recall | Precision | Invented | Failed |
+|---|---|---|---|---|
+| Keyword baseline | 1.00 | 0.957 | 0 | 0 |
+| DeepSeek V4 Flash, thinking off | 1.00 | 0.957 | 0 | 0 |
 
-## Choices and why
-- One clause first, so the whole recipe works before I copy it.
-- Whole contract in the prompt, no chunking. The longest dev contract is about 40,000 tokens, and chunking adds a way to miss the clause.
-- Retries only on 429 and 5xx, with backoff. 401 and 404 stop at once.
-- Parser takes the first { to the last }. It does not trust a code-fence wrapper.
-- The model never sees the lawyers' answers.
-- Recall is reported twice, because a failing model must not look perfect.
-- Eval built by hand, not MLflow or Databricks. Reason: I wanted to understand every number. MLflow tracking is a later step.
-- Quote match today: one quote inside the other. Planned: the CUAD evaluator's Jaccard rule, threshold 0.5.
+The model returned the right sentence for 22 of 22 positives. A free keyword search is a strong baseline for this clause.
 
-## Open questions (proposed answers, confirm)
-- Contract names two states: value is the state whose law governs, not the court's state.
-- Quote check fails twice: mark the contract "needs human review".
+**All 41 clauses (10 contracts, 410 calls)**
 
-## To do
-1. Confirm the model answers in seconds. Switch model or provider if not.
-2. Run the eval on 3 contracts, then 30. Read every wrong answer.
-3. Switch quote match to Jaccard 0.5.
-4. Prompt v2 from real mistakes (exact not-found JSON, two examples). One change per run.
-5. Keyword baseline. Two-model comparison. Test pile once.
-6. Four more clauses. README. CLI or small API.
+| Recall | Precision | Invented quotes | Errors | Avg latency |
+|---|---|---|---|---|
+| 0.994 | 0.596 | 7 | 0 | 2.07 s |
 
+- Most false alarms are neighbouring clauses returned for the asked clause. The official clause Group predicts which.
+- The 7 invented quotes are near copies of real sentences with one word changed.
+- Recall and failed-call targets are met. The invented-quote target is not.
 
-Baseline v1 on dev: recall 1.0, precision 0.957, right sentence 20 of 22.
-Baseline v2 on dev (rules tightened after seeing v1 errors): recall 0.864, precision 1.0, right sentence 19 of 22.
-Trade-off: stricter rules fixed 2 wrong quotes and 1 false alarm, but lost 3 clauses.
-Both scores are optimistic because the rules were tuned on dev. Honest numbers come from the locked test pile.
+## 8. Decision log
+| # | Decision | Reason | Consequence |
+|---|---|---|---|
+| 1 | Verify every quote against the contract | The core guarantee of the product | Model output is never trusted as-is |
+| 2 | Parse from first `{` to last `}` | Models wrap JSON in prose or code fences | Pydantic validates the shape afterwards |
+| 3 | Retry only on 429 and 5xx, with backoff | Auth and request errors will not heal | 400, 401, 403 and 404 fail immediately |
+| 4 | Whole contract in the prompt for now | Chunking adds a way to miss a clause | Cost grows with contract size (see section 9) |
+| 5 | Evaluation built by hand, not MLflow | Every number is understood | Experiment tracking is a later step |
+| 6 | Provider: DeepSeek V4 Flash, thinking off, max 1500 output tokens | About 2 s per call and low cost | Hosted tier sends prompts to servers in China: public contracts only |
+| 7 | One Postgres with pgvector for contracts, clauses, chunks, highlights | Single store for metadata, vectors and full-text search | Vector size must match the chosen embedding model |
+| 8 | Ingestion before retrieval | Retrieval quality can only be measured on stored, checked data | Embeddings, RAG and the agent come after ingestion |
+| 9 | No version suffixes in file names | Git is the version history | One current file per purpose |
 
-Baseline v2 misses on dev (3 of 22):
-- Two are wording gaps ("controlled by", "in accordance with the laws of"). A phrase list cannot cover all wording.
-- One is a venue clause that the key labels as Governing Law. It has no governing-law wording at all. Label noise sets a ceiling on any score.
-Decision: do not tune the baseline further on dev. Saved the three contracts in evals/hard_cases.json. Honest comparison happens once on the locked test pile.
+## 9. Cost plan
+One call per clause per contract sends each contract 41 times. Levers, largest first:
+1. Batch several clauses per call (about 8x less input).
+2. Place the contract first so the provider can cache the prefix (price unverified).
+3. Cheaper model or batch API.
+4. Retrieval only for clauses where it measured safe (11 of 41 with keyword search, about 22% saving).
+5. Cache identical prompts and skip work that cannot change the answer.
 
-22 of 22 is small. A rough 95% lower bound on recall is about 0.85. One new miss would move it to 0.95.
-quote_match is generous. It counts a hit if any quote overlaps a lawyer quote. Extra, unmatched quotes are hidden, like the “conflict of law rules” sentence earlier. Run the quote precision script to see.
-Row 20 needs a look. The lawyers labeled a court-location sentence as Governing Law, and the model “matched” it. Check what it quoted.
-value is not scored yet.
-The model ran once. Models vary from run to run, so run the same 30 again and compare.
-Your prompt was not tuned on dev, so this result is fairer than baseline v2’s. It was written before you saw any dev error.
+An agent adds cost and is reserved for failed cases.
+
+## 10. Storage and ingestion plan
+- Tables: `contracts`, `clauses`, `chunks` (text, embedding, full-text vector), `highlights` (text, embedding). A view of leak-free training contracts serves as the example bank.
+- Ingestion order: create tables, load clauses, load contracts with split flags, chunk, load highlights, mark the example bank, run integrity checks.
+- Integrity checks: 510 contracts, 41 clauses, about 13,823 highlights, chunk and highlight text equal the contract slice at their offsets, report split conflicts.
+- The LLM response cache moves into Postgres, keyed by a hash of the full prompt and model.
+
+## 11. Roadmap
+1. Ingestion with tests.
+2. Embeddings, then compare keyword and vector retrieval (recall at k per clause).
+3. Clause prompt built from official descriptions and group neighbours.
+4. Quote snapping: repair near-copy quotes while still rejecting a changed word.
+5. Batched extraction, then hybrid retrieval, then the agent for failures.
+6. Score `value` automatically and adopt the official Jaccard >= 0.5 match.
+7. Run the locked test set once.
+
+## 12. Security and privacy
+- API keys live in `.env`, which is never committed. Any key exposed outside `.env` must be revoked.
+- Use only public contracts with hosted providers that are not vetted for confidential data.

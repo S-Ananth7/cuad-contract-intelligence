@@ -1,4 +1,4 @@
-from cuad_ai.clauses import clause_questions
+from cuad_ai.clauses import clause_questions, clause_name
 
 
 def contract_row(contract) -> dict:
@@ -27,3 +27,31 @@ def insert_clauses(conn, rows):
     sql = "INSERT INTO clauses (name, question) VALUES (%s, %s)"
     for row in rows:
         conn.execute(sql, (row["name"], row["question"]))
+
+
+def highlight_rows(contract):
+    rows = []
+    title = contract["title"]
+    for qa in contract["paragraphs"][0]["qas"]:
+        clause = clause_name(qa["id"])
+        for answer in qa["answers"]:
+            start = answer["answer_start"]
+            end = start + len(answer["text"])
+            rows.append({
+                "title": title,
+                "clause": clause,
+                "start_char": start,
+                "end_char": end,
+                "text": answer["text"]
+            })
+    return rows
+
+
+def insert_highlights(conn, rows):
+    sql = (
+    "INSERT INTO highlights (contract_id, clause_id, start_char, end_char, text) "
+    "VALUES ((SELECT id FROM contracts WHERE title = %s), "
+    "(SELECT id FROM clauses WHERE name = %s), %s, %s, %s)"
+)
+    for row in rows:
+        conn.execute(sql, (row["title"], row["clause"], row["start_char"], row["end_char"], row["text"]))  

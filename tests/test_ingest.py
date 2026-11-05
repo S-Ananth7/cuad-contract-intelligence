@@ -3,7 +3,7 @@ import psycopg
 import pytest
 from dotenv import load_dotenv
 
-from cuad_ai.ingest import contract_row, insert_contracts, clause_rows, insert_clauses
+from cuad_ai.ingest import contract_row, insert_contracts, clause_rows, insert_clauses, highlight_rows, insert_highlights
 
 load_dotenv()
 
@@ -53,3 +53,30 @@ def test_insert_clauses_adds_rows(conn):
     after = conn.execute("select count(*)from clauses").fetchone()[0]
     assert after - before == 2
     
+
+def test_highlight_rows_flatten_the_lawyer_answers():
+    contract = {
+        "title": "X",
+        "paragraphs": [{"context": "Hello law text here", "qas": [
+            {"id": "X__Governing Law", "is_impossible": False,
+             "answers": [{"text": "law text", "answer_start": 6}]},
+            {"id": "X__Parties", "is_impossible": True, "answers": []},
+        ]}],
+    }
+    assert highlight_rows(contract) == [
+        {"title": "X", "clause": "Governing Law",
+         "start_char": 6, "end_char": 14, "text": "law text"},
+    ]
+
+
+def test_insert_highlights_links_to_contract_and_clause(conn):
+    insert_contracts(conn, [{"title": "T1", "company": "T", "n_chars": 10}])
+    insert_clauses(conn, [{"name": "C1", "question": "Q"}])
+    rows = [{"title": "T1", "clause": "C1", "start_char": 0, "end_char": 5, "text": "hello"}]
+    insert_highlights(conn, rows)
+    got = conn.execute(
+    "select h.start_char, h.text, c.title, k.name from highlights h "
+    "join contracts c on c.id = h.contract_id "
+    "join clauses k on k.id = h.clause_id where c.title = %s", ("T1",)
+).fetchall()
+    assert got == [(0, "hello", "T1", "C1")]

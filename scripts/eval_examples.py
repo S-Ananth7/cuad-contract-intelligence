@@ -4,7 +4,7 @@ from collections import defaultdict
 import psycopg
 from dotenv import load_dotenv
 
-from cuad_ai.examples import search_by_examples
+from cuad_ai.search import search_by_examples
 
 KS = (3, 5, 10)
 MIN_COVER = 0.5

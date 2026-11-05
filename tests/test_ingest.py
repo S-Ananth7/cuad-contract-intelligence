@@ -3,7 +3,7 @@ import psycopg
 import pytest
 from dotenv import load_dotenv
 
-from cuad_ai.ingest import contract_row, insert_contracts, clause_rows, insert_clauses, highlight_rows, insert_highlights
+from cuad_ai.ingest import contract_row, insert_contracts, clause_rows, insert_clauses, highlight_rows, insert_highlights, chunk_spans, chunk_rows, insert_chunks
 
 load_dotenv()
 
@@ -80,3 +80,30 @@ def test_insert_highlights_links_to_contract_and_clause(conn):
     "join clauses k on k.id = h.clause_id where c.title = %s", ("T1",)
 ).fetchall()
     assert got == [(0, "hello", "T1", "C1")]
+
+
+def test_chunk_spans_cover_text_with_overlap():
+    text = "word " * 500
+    spans = chunk_spans(text, size=1000, overlap=200)
+    assert spans[0][0] == 0
+    assert spans[-1][1] == len(text)
+    assert all(e - s <= 1000 for s, e in spans)
+    assert all(spans[i + 1][0] < spans[i][1] for i in range(len(spans) - 1))
+
+
+def test_chunk_rows_text_equals_contract_slice():
+    text = "Sentence number one. " * 200
+    contract = {"title": "X", "paragraphs": [{"context": text, "qas": []}]}
+    rows = chunk_rows(contract)
+    assert len(rows) > 1
+    assert all(text[r["start_char"]:r["end_char"]] == r["text"] for r in rows)
+
+
+def test_insert_chunks_links_to_contract(conn):
+    insert_contracts(conn, [{"title": "T1", "company": "T", "n_chars": 10}])
+    insert_chunks(conn, [{"title": "T1", "start_char": 0, "end_char": 5, "text": "hello"}])
+    got = conn.execute(
+        "select k.start_char, k.text, c.title from chunks k "
+        "join contracts c on c.id = k.contract_id where c.title = %s", ("T1",)
+    ).fetchall()
+    assert got == [(0, "hello", "T1")]

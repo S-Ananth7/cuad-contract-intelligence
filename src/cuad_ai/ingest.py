@@ -55,3 +55,40 @@ def insert_highlights(conn, rows):
 )
     for row in rows:
         conn.execute(sql, (row["title"], row["clause"], row["start_char"], row["end_char"], row["text"]))  
+
+
+def chunk_spans(text, size=1000, overlap=200):
+    """cut text into (start, end) spans of about `size` characters, overlapping by `overlap`."""
+    spans = []
+    start = 0
+    n = len(text)
+    while start < n:
+        end = min(start + size, n)
+        if end < n:
+            cut = max(text.rfind(" ", start, end), text.rfind("\n", start, end))
+            if cut > start + size // 2:
+                end = cut
+        spans.append((start, end))
+        if end >= n:
+            break
+        start = end - overlap
+    return spans
+
+
+def chunk_rows(contract, size=1000, overlap=200):
+    title = contract["title"]
+    text = contract["paragraphs"][0]["context"]
+    return [
+        {"title": title, "start_char": s, "end_char": e, "text": text[s:e]}
+        for s, e in chunk_spans(text, size, overlap)
+    ]
+
+    
+def insert_chunks(conn, rows):
+    sql = (
+        "INSERT INTO chunks (contract_id, start_char, end_char, text) "
+        "VALUES ((SELECT id FROM contracts WHERE title = %s), %s, %s, %s)"
+    )
+    params = [(r["title"], r["start_char"], r["end_char"], r["text"]) for r in rows]
+    with conn.cursor() as cur:
+        cur.executemany(sql, params)

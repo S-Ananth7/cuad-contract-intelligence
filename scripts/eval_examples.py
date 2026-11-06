@@ -4,12 +4,20 @@ from collections import defaultdict
 import psycopg
 from dotenv import load_dotenv
 
-from cuad_ai.search import search_by_examples
+from cuad_ai.search import search_by_examples, search_hybrid
+from cuad_ai.terms import learn_terms
 
 KS = (3, 5, 10)
 MIN_COVER = 0.5
 HEADER_CLAUSES = {"Document Name", "Parties", "Agreement Date", "Effective Date"}
 HEADER_CHUNKS = 4
+
+SPLIT = os.environ.get("SPLIT", "test")
+MODE = os.environ.get("MODE", "examples")
+CONTRACTS = {
+    "test": "c.official_split = 'test'",
+    "validation": "c.official_split = 'train' AND NOT c.shares_company_with_test AND c.id % 5 = 0",
+}[SPLIT]
 
 
 def covered(highlight, chunks):
@@ -25,13 +33,19 @@ def covered(highlight, chunks):
 
 def main():
     load_dotenv()
+    print("scoring on:", SPLIT, "| mode:", MODE)
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        terms = {}
+        if MODE == "hybrid":
+            holdout = CONTRACTS if SPLIT == "validation" else None
+            terms = learn_terms(conn, holdout=holdout)
+
         clauses = conn.execute("select id, name from clauses order by id").fetchall()
         by_clause = defaultdict(lambda: defaultdict(list))
         for contract_id, clause_id, start, end in conn.execute(
             "select h.contract_id, h.clause_id, h.start_char, h.end_char "
             "from highlights h join contracts c on c.id = h.contract_id "
-            "where c.official_split = 'test'"
+            "where " + CONTRACTS
         ):
             by_clause[clause_id][contract_id].append((start, end))
 
@@ -42,7 +56,11 @@ def main():
             cases = by_clause[clause_id]
             hits = {k: 0 for k in KS}
             for contract_id, spans in cases.items():
-                found = search_by_examples(conn, contract_id, clause_id, max(KS))
+                if MODE == "hybrid":
+                    stems = [t for t, _ in terms.get(name, [])]
+                    found = search_hybrid(conn, contract_id, clause_id, stems, max(KS))
+                else:
+                    found = search_by_examples(conn, contract_id, clause_id, max(KS))
                 chunks = [(s, e) for s, e, _ in found]
                 header = []
                 if name in HEADER_CLAUSES:

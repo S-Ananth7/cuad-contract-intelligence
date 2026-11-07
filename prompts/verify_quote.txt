@@ -1,0 +1,15 @@
+You are checking one answer from a contract review.
+
+Clause type: [CLAUSE]
+The question for this clause type: [QUESTION]
+
+Quote taken from a contract:
+[QUOTE]
+
+Does this quote, by itself, contain the text the question asks for?
+Say true only if the quote is itself that kind of clause. Say false if the quote is about something else,
+only mentions the topic in passing, or is really a different clause type.
+If it is really a different clause type, give that clause type in "looks_like"; otherwise use "none".
+
+Reply with one JSON object and nothing else:
+{"is_this_clause": true, "looks_like": "none"}

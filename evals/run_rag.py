@@ -22,9 +22,20 @@ TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "prompts/clause_rag.txt")
 K = int(os.environ.get("K", "5"))
 LIMIT = int(os.environ.get("LIMIT", "10"))
 SET = os.environ.get("SET", "dev")
+OFFSET = int(os.environ.get("OFFSET", "0"))
 PAUSE_SECONDS = float(os.environ.get("PAUSE_SECONDS", "0.2"))
 HEADER_CLAUSES = {"Document Name", "Parties", "Agreement Date", "Effective Date"}
 HEADER_CHUNKS = 4
+
+
+RETRY_NOTE = ("\n\nIMPORTANT: your last reply could not be used. Copy each quote exactly, character for "
+              "character, from one single excerpt. Do not paraphrase, shorten, or join text across the [...] marker. "
+              "Reply with one JSON object and nothing else.")
+
+
+def needs_retry(row):
+    """True when the reply could not be used: a call or parse error, or a quote not found word for word."""
+    return bool(row["error"]) or (bool(row["found"]) and row["quotes_real"] is False)
 
 
 def official_test_titles():
@@ -42,11 +53,16 @@ def main():
         with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
             eval_titles = [t for (t,) in conn.execute(
                 "select title from contracts where official_split = 'train' "
-                "and not shares_company_with_test and id %% 5 = 0 order by id limit %s", (LIMIT,))]
+                "and not shares_company_with_test and id %% 5 = 0 order by id limit %s offset %s", (LIMIT, OFFSET))]
+    elif SET == "test":
+        if os.environ.get("CONFIRM_TEST") != "yes":
+            raise SystemExit("SET=test scores the official test contracts. Run it once, when the design is frozen. "
+                             "Set CONFIRM_TEST=yes to go ahead.")
+        eval_titles = sorted(official_test_titles())[OFFSET:OFFSET + LIMIT]
     else:
         eval_titles = json.loads(Path("evals/eval_set.json").read_text(encoding="utf-8"))["titles"][:LIMIT]
     test_titles = official_test_titles()
-    titles = [t for t in eval_titles if t not in test_titles]
+    titles = [t for t in eval_titles if SET == "test" or t not in test_titles]
     print(f"contracts: {len(titles)} (left out {len(eval_titles) - len(titles)} official test) "
           f"| clauses: {len(clauses)} | k={K}")
 
@@ -82,6 +98,18 @@ def main():
                     gold = get_gold_quotes(contract, clause)
                     prompt = make_clause_prompt(template, clause, questions[clause])
                     row = extract_governing_law(context, prompt, call=call)
+                    row["retried"], row["unsolved"] = False, False
+                    if needs_retry(row):
+                        again = extract_governing_law(context, prompt + RETRY_NOTE, call=call)
+                        row["retried"] = True
+                        tokens_in, tokens_out = row["tokens_in"], row["tokens_out"]
+                        if not needs_retry(again):
+                            row = again
+                            row["retried"], row["unsolved"] = True, False
+                        else:
+                            row["unsolved"] = True
+                        row["tokens_in"] += tokens_in
+                        row["tokens_out"] += tokens_out
                     row["title"], row["clause"] = title, clause
                     row["gold_found"] = len(gold) > 0
                     row["quote_match"] = quotes_overlap(row["quotes"], gold)

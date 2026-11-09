@@ -16,6 +16,7 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
 RISK_LIMIT = 0.5  # clauses above this false-alarm rate always go to review
 PRIOR_WEIGHT = 3  # how strongly a rare clause is pulled toward the overall rate
+# A date or a title is not a sentence: "is this quote that clause?" is the wrong question for them.
 ALWAYS_ACCEPT = frozenset({"Document Name", "Agreement Date"})
 
 N_EXAMPLES = 3  # lawyer examples shown to judge 2

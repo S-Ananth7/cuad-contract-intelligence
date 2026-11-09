@@ -5,7 +5,6 @@ Examples are the 3 bank highlights of the asked clause closest to the quote,
 never from the same company as the contract. Replies are cached.
 """
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -18,6 +17,7 @@ from cuad_ai.embed import embed_texts, load_model, vector_literal
 from cuad_ai.extract import extract_json, load_prompt
 from cuad_ai.llm import call_model
 from cuad_ai.loader import load_contracts
+from cuad_ai.settings import database_url, env_flag
 from verify_answers import score
 
 TEMPLATE = "prompts/verify_quote_examples.txt"
@@ -62,12 +62,12 @@ def main():
     gold_total = sum(1 for r in report if r["gold_found"])
     questions = clause_questions(load_contracts())
     prompt_text = load_prompt(TEMPLATE)
-    call = cached(call_model, enabled=not os.environ.get("NO_CACHE"))
+    call = cached(call_model, enabled=not env_flag("NO_CACHE"))
     model = load_model()
 
     review = [r for r in rows if r["route"] == "review"]
     tokens = unreadable = 0
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         for i, r in enumerate(review, 1):
             quote = quotes[(r["title"], r["clause"])]
             examples = get_examples(conn, model, r["clause"], r["title"].split("_")[0], quote)

@@ -17,15 +17,14 @@ from cuad_ai.metrics import quotes_overlap, summarize
 from cuad_ai.runlog import log_run, new_run_id, run_info, write_report
 from cuad_ai.search import search_hybrid
 from cuad_ai.terms import learn_terms
+from cuad_ai.settings import HEADER_CHUNKS, HEADER_CLAUSES, database_url, env_flag, env_float, env_int, env_text
 
-TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "prompts/clause_rag.txt")
-K = int(os.environ.get("K", "5"))
-LIMIT = int(os.environ.get("LIMIT", "10"))
-SET = os.environ.get("SET", "dev")
-OFFSET = int(os.environ.get("OFFSET", "0"))
-PAUSE_SECONDS = float(os.environ.get("PAUSE_SECONDS", "0.2"))
-HEADER_CLAUSES = {"Document Name", "Parties", "Agreement Date", "Effective Date"}
-HEADER_CHUNKS = 4
+TEMPLATE_PATH = env_text("TEMPLATE_PATH", "prompts/clause_rag.txt")
+K = env_int("K", 5)
+LIMIT = env_int("LIMIT", 10)
+SET = env_text("SET", "dev")
+OFFSET = env_int("OFFSET", 0)
+PAUSE_SECONDS = env_float("PAUSE_SECONDS", 0.2)
 
 RETRY_NOTE = ("\n\nIMPORTANT: your last reply could not be used. Copy each quote exactly, character for "
               "character, from one single excerpt. Do not paraphrase, shorten, or join text across the [...] marker. "
@@ -49,7 +48,7 @@ def main():
     clauses = list(questions)
 
     if SET == "validation":
-        with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        with psycopg.connect(database_url()) as conn:
             eval_titles = [t for (t,) in conn.execute(
                 "select title from contracts where official_split = 'train' "
                 "and not shares_company_with_test and id %% 5 = 0 order by id limit %s offset %s", (LIMIT, OFFSET))]
@@ -66,7 +65,7 @@ def main():
           f"| clauses: {len(clauses)} | k={K}")
 
     template = load_prompt(TEMPLATE_PATH)
-    call = cached(call_model, enabled=not os.environ.get("NO_CACHE"))
+    call = cached(call_model, enabled=not env_flag("NO_CACHE"))
     info = run_info(template)
     model = os.environ.get("LLM_MODEL", "unknown")
     run_id = new_run_id(f"rag_{Path(TEMPLATE_PATH).stem}_{model}_k{K}_{len(titles)}")
@@ -74,7 +73,7 @@ def main():
             "date": date.today().isoformat(), "run_info": info}
     rows, total = [], len(titles) * len(clauses)
 
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         ids = {t: conn.execute("select id from contracts where title = %s", (t,)).fetchone()[0] for t in titles}
         clause_ids = dict(conn.execute("select name, id from clauses").fetchall())
         holdout = "c.id IN (" + ",".join(str(i) for i in ids.values()) + ")"

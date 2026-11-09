@@ -12,11 +12,12 @@ from cuad_ai.llm import call_model
 from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contracts, load_splits
 from cuad_ai.metrics import quotes_overlap, summarize
 from cuad_ai.runlog import RUNS_DIR, find_run, load_report, log_run, new_run_id, run_info, write_report
+from cuad_ai.settings import env_flag, env_float, env_text
 
-TEMPLATE_PATH = os.environ.get("TEMPLATE_PATH", "prompts/clause.txt")
+TEMPLATE_PATH = env_text("TEMPLATE_PATH", "prompts/clause.txt")
 CORE = ["Governing Law", "Effective Date", "Anti-Assignment", "Termination For Convenience", "Cap On Liability"]
-PAUSE_SECONDS = float(os.environ.get("PAUSE_SECONDS", "0.2"))
-SECONDS_PER_CALL = float(os.environ.get("SECONDS_PER_CALL", "1.6"))
+PAUSE_SECONDS = env_float("PAUSE_SECONDS", 0.2)
+SECONDS_PER_CALL = env_float("SECONDS_PER_CALL", 1.6)
 
 
 def choose_clauses(choice, available):
@@ -85,7 +86,7 @@ def main():
         return
 
     template = load_prompt(TEMPLATE_PATH)
-    call = cached(call_model, enabled=not os.environ.get("NO_CACHE"))
+    call = cached(call_model, enabled=not env_flag("NO_CACHE"))
     model = os.environ.get("LLM_MODEL", "unknown")
     info = run_info(template)
     label = choice if choice in ("core", "all") else "custom"

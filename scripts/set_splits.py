@@ -1,8 +1,9 @@
 import json
-import os
 
 import psycopg
 from dotenv import load_dotenv
+
+from cuad_ai.settings import database_url
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ def main() -> None:
     titles = test_titles()
     companies = sorted({company(t) for t in titles})
 
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         conn.execute(
             "UPDATE contracts "
             "SET official_split = CASE WHEN title = ANY(%s) THEN 'test' ELSE 'train' END",

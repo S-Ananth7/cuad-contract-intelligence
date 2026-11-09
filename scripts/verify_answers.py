@@ -4,7 +4,6 @@ Reads routing.json (from route_answers.py) and report.json in the same run folde
 Model replies are cached, so a stopped run resumes where it stopped at no cost.
 """
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -15,6 +14,7 @@ from cuad_ai.clauses import clause_questions, make_clause_prompt
 from cuad_ai.extract import extract_json, load_prompt
 from cuad_ai.llm import call_model
 from cuad_ai.loader import load_contracts
+from cuad_ai.settings import env_flag
 
 TEMPLATE = "prompts/verify_quote.txt"
 
@@ -46,7 +46,7 @@ def main():
     gold_total = sum(1 for r in report if r["gold_found"])
     questions = clause_questions(load_contracts())
     prompt_text = load_prompt(TEMPLATE)
-    call = cached(call_model, enabled=not os.environ.get("NO_CACHE"))
+    call = cached(call_model, enabled=not env_flag("NO_CACHE"))
 
     review = [r for r in rows if r["route"] == "review"]
     tokens = unreadable = 0

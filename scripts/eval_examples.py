@@ -1,21 +1,19 @@
-import os
 from collections import defaultdict
 
 import psycopg
 from dotenv import load_dotenv
 
 from cuad_ai.search import search_by_examples, search_hybrid
+from cuad_ai.settings import HEADER_CHUNKS, HEADER_CLAUSES, database_url, env_int, env_text
 from cuad_ai.terms import learn_terms
 
 KS = (3, 5, 10)
 MIN_COVER = 0.5
-HEADER_CLAUSES = {"Document Name", "Parties", "Agreement Date", "Effective Date"}
-HEADER_CHUNKS = 4
 
-SPLIT = os.environ.get("SPLIT", "test")
-MODE = os.environ.get("MODE", "examples")
-TOP = int(os.environ.get("TOP", "10"))
-POOL = int(os.environ.get("POOL", "50"))
+SPLIT = env_text("SPLIT", "test")
+MODE = env_text("MODE", "examples")
+TOP = env_int("TOP", 10)
+POOL = env_int("POOL", 50)
 CONTRACTS = {
     "test": "c.official_split = 'test'",
     "validation": "c.official_split = 'train' AND NOT c.shares_company_with_test AND c.id % 5 = 0",
@@ -36,7 +34,7 @@ def covered(highlight, chunks):
 def main():
     load_dotenv()
     print("scoring on:", SPLIT, "| mode:", MODE)
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         terms = {}
         if MODE == "hybrid":
             holdout = CONTRACTS if SPLIT == "validation" else None

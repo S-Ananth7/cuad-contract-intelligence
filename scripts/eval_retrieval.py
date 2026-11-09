@@ -5,11 +5,10 @@ import psycopg
 from dotenv import load_dotenv
 
 from cuad_ai.embed import embed_texts, load_model, vector_literal
+from cuad_ai.settings import HEADER_CHUNKS, HEADER_CLAUSES, database_url
 
 KS = (3, 5, 10)
 MIN_COVER = 0.5
-HEADER_CLAUSES = {"Document Name", "Parties", "Agreement Date", "Effective Date"}
-HEADER_CHUNKS = int(os.environ.get("HEADER_CHUNKS", "4"))
 
 
 def covered(highlight, chunks):
@@ -29,7 +28,7 @@ def covered(highlight, chunks):
 def main():
     load_dotenv()
     model = load_model()
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         clauses = conn.execute("select id, name, question from clauses order by id").fetchall()
         by_clause = defaultdict(lambda: defaultdict(list))
         for contract_id, clause_id, start, end in conn.execute(

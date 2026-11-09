@@ -1,4 +1,3 @@
-import os
 import sys
 
 import psycopg
@@ -6,13 +5,14 @@ from dotenv import load_dotenv
 
 from cuad_ai.embed import load_model
 from cuad_ai.search import search_chunks
+from cuad_ai.settings import database_url
 
 
 def main():
     load_dotenv()
     query = sys.argv[1]
     model = load_model()
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         for chunk_id, contract_id, start, end, text, distance in search_chunks(conn, model, query):
             print(f"{distance:.3f} | contract {contract_id} | {start}-{end} | {text[:150]!r}")
 

@@ -11,15 +11,8 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
+
 from cuad_ai.settings import ALWAYS_ACCEPT, PRIOR_WEIGHT, RISK_LIMIT
-
-# RISK_LIMIT = 0.5      # clauses above this false-alarm rate always go to review
-# PRIOR_WEIGHT = 3      # how strongly a rare clause is pulled toward the overall rate
-# # A date or a title is not a sentence: "is this quote that clause?" is the wrong question for them.
-# ALWAYS_ACCEPT = {"Document Name", "Agreement Date"}
-
-# A date or a title is not a sentence: "is this quote that clause?" is the wrong question for them.
-ALWAYS_ACCEPT = frozenset({"Document Name", "Agreement Date"})
 
 
 def smoothed(counts):

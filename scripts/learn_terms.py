@@ -1,14 +1,14 @@
-import os
 
 import psycopg
 from dotenv import load_dotenv
 
 from cuad_ai.terms import learn_terms
+from cuad_ai.settings import database_url
 
 
 def main():
     load_dotenv()
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         result = learn_terms(conn)
     for name in sorted(result):
         words = ", ".join(f"{t} ({share:.0%})" for t, share in result[name])

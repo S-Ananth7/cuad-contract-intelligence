@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -7,6 +6,7 @@ import psycopg
 from dotenv import load_dotenv
 
 from cuad_ai.embed import embed_texts, load_model, vector_literal
+from cuad_ai.settings import database_url
 
 SQL = """
 SELECT cl.name, MAX(1 - (h.embedding <=> %s::vector)) AS sim
@@ -24,7 +24,7 @@ def main():
     rows = json.loads(report.read_text(encoding="utf-8"))["rows"]
     model = load_model()
     out = []
-    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+    with psycopg.connect(database_url()) as conn:
         for r in rows:
             if not r["found"] or not r["quotes"]:
                 continue

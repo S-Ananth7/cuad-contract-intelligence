@@ -9,9 +9,10 @@ from cuad_ai.baseline import keyword_governing_law
 from cuad_ai.extract import extract_governing_law, load_prompt
 from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contracts, load_splits
 from cuad_ai.metrics import quotes_overlap, summarize
+from cuad_ai.settings import env_text
 
 CLAUSE = "Governing Law"
-PROMPT_PATH = os.environ.get("PROMPT_PATH", "prompts/governing_law.txt")
+PROMPT_PATH = env_text("PROMPT_PATH", "prompts/governing_law.txt")
 PAUSE_SECONDS = 3
 
 

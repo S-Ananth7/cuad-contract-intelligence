@@ -27,7 +27,6 @@ PAUSE_SECONDS = float(os.environ.get("PAUSE_SECONDS", "0.2"))
 HEADER_CLAUSES = {"Document Name", "Parties", "Agreement Date", "Effective Date"}
 HEADER_CHUNKS = 4
 
-
 RETRY_NOTE = ("\n\nIMPORTANT: your last reply could not be used. Copy each quote exactly, character for "
               "character, from one single excerpt. Do not paraphrase, shorten, or join text across the [...] marker. "
               "Reply with one JSON object and nothing else.")
@@ -101,15 +100,13 @@ def main():
                     row["retried"], row["unsolved"] = False, False
                     if needs_retry(row):
                         again = extract_governing_law(context, prompt + RETRY_NOTE, call=call)
-                        row["retried"] = True
-                        tokens_in, tokens_out = row["tokens_in"], row["tokens_out"]
-                        if not needs_retry(again):
+                        spent_in = row["tokens_in"] + again["tokens_in"]
+                        spent_out = row["tokens_out"] + again["tokens_out"]
+                        solved = not needs_retry(again)
+                        if solved:
                             row = again
-                            row["retried"], row["unsolved"] = True, False
-                        else:
-                            row["unsolved"] = True
-                        row["tokens_in"] += tokens_in
-                        row["tokens_out"] += tokens_out
+                        row["retried"], row["unsolved"] = True, not solved
+                        row["tokens_in"], row["tokens_out"] = spent_in, spent_out
                     row["title"], row["clause"] = title, clause
                     row["gold_found"] = len(gold) > 0
                     row["quote_match"] = quotes_overlap(row["quotes"], gold)

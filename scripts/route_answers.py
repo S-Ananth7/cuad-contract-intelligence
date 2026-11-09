@@ -2,64 +2,75 @@
 
 Confidence = the asked clause is the closest of all 41 clauses to the quote
 (from gate_features.json).
-Risk = how often this clause was a false alarm in the OTHER half of the contracts
-(two halves, so a clause's risk never comes from the contract being routed).
+Risk = how often this clause was a false alarm.
+  - No table given: learned from the OTHER half of the contracts (two halves).
+  - Table given (from freeze_risk.py): taken from that file, so the contracts
+    being routed never supply their own risk.
 """
 import json
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-RISK_LIMIT = 0.5  # clauses above this false-alarm rate always go to review
-PRIOR_WEIGHT = 3  # how strongly a rare clause is pulled toward the overall rate
+RISK_LIMIT = 0.5      # clauses above this false-alarm rate always go to review
+PRIOR_WEIGHT = 3      # how strongly a rare clause is pulled toward the overall rate
 # A date or a title is not a sentence: "is this quote that clause?" is the wrong question for them.
 ALWAYS_ACCEPT = {"Document Name", "Agreement Date"}
 
 
-def risk_function(train_rows):
-    """Return clause -> smoothed false-alarm rate, learned from train_rows only."""
-    seen = defaultdict(lambda: [0, 0])
-    for row in train_rows:
-        seen[row["clause"]][0] += 1
-        seen[row["clause"]][1] += not row["gold_found"]
-    overall = sum(v[1] for v in seen.values()) / sum(v[0] for v in seen.values())
-    return lambda clause: (seen[clause][1] + overall * PRIOR_WEIGHT) / (seen[clause][0] + PRIOR_WEIGHT)
+def smoothed(counts):
+    """counts: clause -> [answers, false alarms]. Return clause -> smoothed false-alarm rate."""
+    overall = sum(v[1] for v in counts.values()) / sum(v[0] for v in counts.values())
 
-
-def risk_from_table(table):
-    """Return clause -> smoothed false-alarm rate from a frozen table (see freeze_risk.py)."""
     def risk(clause):
-        n, false = table["clauses"].get(clause, [0, 0])
-        return (false + table["overall"] * PRIOR_WEIGHT) / (n + PRIOR_WEIGHT)
+        answers, false_alarms = counts.get(clause, [0, 0])
+        return (false_alarms + overall * PRIOR_WEIGHT) / (answers + PRIOR_WEIGHT)
+
     return risk
 
 
-def route(rows, table=None):
-    """Add 'risk' and 'route' to every row.
-    With a frozen table, risk comes from it. Without one, contracts are split into two halves."""
-    if table:
-        risk = risk_from_table(table)
-        for r in rows:
-            r["risk"] = round(risk(r["clause"]), 3)
-            sure = r["rank_asked"] == 1 and r["risk"] <= RISK_LIMIT
-            r["route"] = "accept" if sure or r["clause"] in ALWAYS_ACCEPT else "review"
-        return rows
+def risk_function(train_rows):
+    """Return clause -> risk, learned from train_rows only."""
+    counts = defaultdict(lambda: [0, 0])
+    for row in train_rows:
+        counts[row["clause"]][0] += 1
+        counts[row["clause"]][1] += not row["gold_found"]
+    return smoothed(counts)
+
+
+def frozen_risk(path):
+    """Return clause -> risk, from the counts saved by freeze_risk.py."""
+    return smoothed(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+def decide(row):
+    """The routing rule. Needs row['risk'] to be set."""
+    sure = row["rank_asked"] == 1 and row["risk"] <= RISK_LIMIT
+    return "accept" if sure or row["clause"] in ALWAYS_ACCEPT else "review"
+
+
+def route(rows):
+    """Half-split routing: a clause's risk comes from the other half of the contracts."""
     titles = sorted({r["title"] for r in rows})
     half = {title: i % 2 for i, title in enumerate(titles)}
     for k in (0, 1):
         risk = risk_function([r for r in rows if half[r["title"]] != k])
         for r in (r for r in rows if half[r["title"]] == k):
             r["risk"] = round(risk(r["clause"]), 3)
-            confident = r["rank_asked"] == 1
-            sure = confident and r["risk"] <= RISK_LIMIT
-            r["route"] = "accept" if sure or r["clause"] in ALWAYS_ACCEPT else "review"
+            r["route"] = decide(r)
     return rows
 
 
 def main():
     folder = Path(sys.argv[1])
-    table = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8")) if len(sys.argv) > 2 else None
-    rows = route(json.loads((folder / "gate_features.json").read_text(encoding="utf-8")), table)
+    rows = json.loads((folder / "gate_features.json").read_text(encoding="utf-8"))
+    if len(sys.argv) > 2:
+        risk = frozen_risk(sys.argv[2])
+        for r in rows:
+            r["risk"] = round(risk(r["clause"]), 3)
+            r["route"] = decide(r)
+    else:
+        rows = route(rows)
     (folder / "routing.json").write_text(json.dumps(rows), encoding="utf-8")
 
     print(f"{'route':8}{'answers':>9}{'real':>7}{'false':>7}{'precision':>11}")

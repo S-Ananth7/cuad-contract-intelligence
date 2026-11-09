@@ -2,3 +2,6 @@ pydantic
 openai
 python-dotenv
 pytest
+
+psycopg[binary]
+fastembed

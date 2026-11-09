@@ -10,6 +10,8 @@ load_dotenv()
 
 @pytest.fixture
 def conn():
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("DATABASE_URL is not set")
     with psycopg.connect(os.environ["DATABASE_URL"]) as c:
         yield c
         c.rollback()

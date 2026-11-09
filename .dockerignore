@@ -1,0 +1,12 @@
+.git
+.github
+venv
+data
+evals/runs
+evals/cache
+.env
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+*.session.sql

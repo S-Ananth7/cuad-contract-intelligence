@@ -1,0 +1,41 @@
+# Fresh-machine setup: a database with the schema applied, plus a container for the scripts.
+#   docker compose up -d db
+#   docker compose run --rm app python scripts/load_contracts.py
+# Variables come from .env (see .env.example). The password is never stored in this file.
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: cuad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: cuad
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - cuad-db-data:/var/lib/postgresql/data
+      # Run once, on first start, in this order.
+      - ./docker/00_extensions.sql:/docker-entrypoint-initdb.d/00_extensions.sql:ro
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/10_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cuad -d cuad"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://cuad:${POSTGRES_PASSWORD}@db:5432/cuad
+    volumes:
+      - ./data:/app/data
+      - ./evals:/app/evals
+      - fastembed-models:/models
+
+volumes:
+  cuad-db-data:
+  fastembed-models:

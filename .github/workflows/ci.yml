@@ -23,7 +23,6 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://cuad:ci_only_password@localhost:5432/cuad
-      FASTEMBED_CACHE_PATH: ${{ runner.temp }}/fastembed
     steps:
       - uses: actions/checkout@v4
 
@@ -51,4 +50,6 @@ jobs:
           key: fastembed-bge-small-en-v1.5
 
       - name: Test
+        env:
+          FASTEMBED_CACHE_PATH: ${{ runner.temp }}/fastembed
         run: python -m pytest -q

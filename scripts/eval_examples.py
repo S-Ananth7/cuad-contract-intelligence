@@ -14,6 +14,8 @@ HEADER_CHUNKS = 4
 
 SPLIT = os.environ.get("SPLIT", "test")
 MODE = os.environ.get("MODE", "examples")
+TOP = int(os.environ.get("TOP", "10"))
+POOL = int(os.environ.get("POOL", "50"))
 CONTRACTS = {
     "test": "c.official_split = 'test'",
     "validation": "c.official_split = 'train' AND NOT c.shares_company_with_test AND c.id % 5 = 0",
@@ -38,7 +40,7 @@ def main():
         terms = {}
         if MODE == "hybrid":
             holdout = CONTRACTS if SPLIT == "validation" else None
-            terms = learn_terms(conn, holdout=holdout)
+            terms = learn_terms(conn, top=TOP, holdout=holdout)
 
         clauses = conn.execute("select id, name from clauses order by id").fetchall()
         by_clause = defaultdict(lambda: defaultdict(list))
@@ -58,7 +60,7 @@ def main():
             for contract_id, spans in cases.items():
                 if MODE == "hybrid":
                     stems = [t for t, _ in terms.get(name, [])]
-                    found = search_hybrid(conn, contract_id, clause_id, stems, max(KS))
+                    found = search_hybrid(conn, contract_id, clause_id, stems, max(KS), pool=POOL)
                 else:
                     found = search_by_examples(conn, contract_id, clause_id, max(KS))
                 chunks = [(s, e) for s, e, _ in found]

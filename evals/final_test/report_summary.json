@@ -1,0 +1,32 @@
+{
+  "run_id": "20261108_172552_rag_clause_rag_deepseek-v4-flash_k10_102",
+  "meta": {
+    "model": "deepseek-v4-flash",
+    "template": "prompts/clause_rag.txt",
+    "k": 10,
+    "contracts": 102,
+    "date": "2026-11-08",
+    "run_info": {
+      "git_commit": "49948ef",
+      "thinking": "off",
+      "max_tokens": "800",
+      "prompt_hash": "de44f61b"
+    }
+  },
+  "summary": {
+    "contracts": 4182,
+    "errors": 4,
+    "tp": 1181,
+    "fp": 777,
+    "fn": 59,
+    "tn": 2161,
+    "recall": 0.952,
+    "recall_errors_as_misses": 0.949,
+    "precision": 0.603,
+    "invented_quotes": 3,
+    "quote_matches_lawyers": 1078,
+    "avg_tokens_in": 2162.79,
+    "avg_tokens_out": 79.14,
+    "avg_seconds": 1.37
+  }
+}

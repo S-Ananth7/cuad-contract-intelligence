@@ -88,7 +88,7 @@ Any change from here is development. The test set has been used once and is not 
 2. A stricter treatment of the weakest clauses (Price Restrictions, Third Party Beneficiary, Post-Termination Services): a stronger model as second judge, or a per-clause threshold.
 3. Per-clause number of excerpts, and a whole-contract fallback for clauses that stay uncertain.
 4. Store runs and answers in Postgres with the full decision path, and one command for the whole pipeline.
-5. Tests for the routing, retry and finalize logic.
+5. Tests for the routing, retry and final decision logic.
 6. A further held-out set for the next round of changes.
 
 ## 8. Reproduce
@@ -100,5 +100,5 @@ python scripts\gate_features.py $F\report.json
 python scripts\route_answers.py $F evals\risk_table.json
 python scripts\verify_answers.py $F
 python scripts\verify_with_examples.py $F
-python scripts\finalize.py $F
+python scripts\final_answers.py $F
 ```

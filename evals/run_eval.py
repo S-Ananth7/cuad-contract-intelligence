@@ -5,7 +5,6 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 
-from cuad_ai.baseline import keyword_governing_law
 from cuad_ai.extract import extract_governing_law, load_prompt
 from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contracts, load_splits
 from cuad_ai.metrics import quotes_overlap, summarize

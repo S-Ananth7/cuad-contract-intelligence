@@ -10,6 +10,7 @@ from pathlib import Path
 
 import psycopg
 from dotenv import load_dotenv
+from verify_answers import score
 
 from cuad_ai.cache import cached
 from cuad_ai.clauses import clause_questions, make_clause_prompt
@@ -18,7 +19,6 @@ from cuad_ai.extract import extract_json, load_prompt
 from cuad_ai.llm import call_model
 from cuad_ai.loader import load_contracts
 from cuad_ai.settings import database_url, env_flag
-from verify_answers import score
 
 TEMPLATE = "prompts/verify_quote_examples.txt"
 N_EXAMPLES = 3

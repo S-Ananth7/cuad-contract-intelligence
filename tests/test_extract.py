@@ -1,6 +1,6 @@
 import pytest
-from cuad_ai.extract import build_prompt, load_prompt, parse_reply, \
-    extract_governing_law
+
+from cuad_ai.extract import build_prompt, extract_governing_law, load_prompt, parse_reply
 
 INSTRUCTIONS = "Find the governing law sentence. Return JSON."
 CONTRACT = "This Agreement is governed by the laws of Texas."

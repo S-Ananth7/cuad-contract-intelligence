@@ -11,7 +11,7 @@ absent = []
 for contract in data['data']:
     for qa in contract['paragraphs'][0]['qas']:
         if qa['id'].endswith('Governing Law'):
-            if qa['is_impossible'] == False:
+            if not qa['is_impossible']:
                 present.append(contract['title'])
             else:
                 absent.append(contract['title'])

@@ -1,9 +1,20 @@
 import os
+
 import psycopg
 import pytest
 from dotenv import load_dotenv
 
-from cuad_ai.ingest import contract_row, insert_contracts, clause_rows, insert_clauses, highlight_rows, insert_highlights, chunk_spans, chunk_rows, insert_chunks
+from cuad_ai.ingest import (
+    chunk_rows,
+    chunk_spans,
+    clause_rows,
+    contract_row,
+    highlight_rows,
+    insert_chunks,
+    insert_clauses,
+    insert_contracts,
+    insert_highlights,
+)
 
 load_dotenv()
 

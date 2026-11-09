@@ -1,5 +1,9 @@
 from cuad_ai.clauses import (
-    clause_questions, company, coverage_sample, make_clause_prompt, positives_by_clause,
+    clause_questions,
+    company,
+    coverage_sample,
+    make_clause_prompt,
+    positives_by_clause,
 )
 
 

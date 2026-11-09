@@ -1,6 +1,7 @@
 
 import psycopg
 from dotenv import load_dotenv
+
 from cuad_ai.ingest import clause_rows, insert_clauses
 from cuad_ai.loader import load_contracts
 from cuad_ai.settings import database_url

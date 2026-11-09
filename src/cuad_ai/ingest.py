@@ -1,4 +1,4 @@
-from cuad_ai.clauses import clause_questions, clause_name
+from cuad_ai.clauses import clause_name, clause_questions
 
 
 def contract_row(contract) -> dict:

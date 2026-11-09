@@ -1,9 +1,8 @@
 import json
 import sys
 
-import pytest
-
 import final_answers as fa
+import pytest
 import run_rag
 
 

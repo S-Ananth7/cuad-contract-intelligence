@@ -2,7 +2,7 @@
 
 Last updated: 2026-11-08
 
-This note covers what comes after retrieval and the model's first answer: checking each answer, deciding which ones to trust, and reviewing the doubtful ones with a second, cheap model call. The earlier steps are in `notes/ingestion_and_retrieval.md` (finding the passages) and `notes/rag_pipeline_results.md` (sending only those passages to the model). This note is a new file and replaces nothing.
+This note covers what comes after retrieval and the model's first answer: checking each answer, deciding which ones to trust, and reviewing the doubtful ones with a second, cheap model call. The earlier steps are in `notes/ingestion_and_retrieval.md` (finding the passages) and `notes/rag_and_agent.md` (sending only those passages to the model). This note is a new file and replaces nothing.
 
 ## 1. The problem
 

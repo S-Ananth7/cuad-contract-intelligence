@@ -2,8 +2,8 @@
 import psycopg
 from dotenv import load_dotenv
 
-from cuad_ai.terms import learn_terms
 from cuad_ai.settings import database_url
+from cuad_ai.terms import learn_terms
 
 
 def main():

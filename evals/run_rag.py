@@ -16,8 +16,8 @@ from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contrac
 from cuad_ai.metrics import quotes_overlap, summarize
 from cuad_ai.runlog import log_run, new_run_id, run_info, write_report
 from cuad_ai.search import search_hybrid
-from cuad_ai.terms import learn_terms
 from cuad_ai.settings import HEADER_CHUNKS, HEADER_CLAUSES, database_url, env_flag, env_float, env_int, env_text
+from cuad_ai.terms import learn_terms
 
 TEMPLATE_PATH = env_text("TEMPLATE_PATH", "prompts/clause_rag.txt")
 K = env_int("K", 5)

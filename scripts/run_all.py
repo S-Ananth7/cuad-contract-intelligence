@@ -6,7 +6,6 @@
 Needs evals/risk_table.json (made by freeze_risk.py from validation runs). Risk is never learned from the
 contracts being scored.
 """
-import os
 import subprocess
 import sys
 from pathlib import Path

@@ -4,7 +4,7 @@ help:  ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /  /'
 
 setup:  ## Install the package with the development tools
-	pip install -e ".[dev]"
+	pip install -e ".[dev,api]"
 
 lint:  ## Check code style and unused names
 	ruff check .

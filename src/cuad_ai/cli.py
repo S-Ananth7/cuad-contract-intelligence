@@ -12,6 +12,7 @@ STAGES = {
     "finalize": ("cuad_ai.pipeline.finalize", "<run folder>: accept, reject or queue every question and print the scores"),
     "freeze-risk": ("cuad_ai.pipeline.risk", "<validation run folders...>: write evals/risk_table.json"),
     "pipeline": ("cuad_ai.pipeline.run_all", "[run folder]: every stage in order (extracts first when no folder is given)"),
+    "serve": ("cuad_ai.api", "[host] [port]: read-only API over stored runs (needs the api extra)"),
 }
 
 

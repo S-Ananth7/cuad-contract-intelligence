@@ -1,6 +1,6 @@
-"""Stage 2b: like verify_answers.py, but the model also sees 3 lawyer-marked examples of the clause.
+"""Stage 2b: like judge_quote, but the model also sees 3 lawyer-marked examples of the clause.
 
-Reads verified.json (from verify_answers.py) and report.json in the same run folder.
+Reads verified.json (from `cuad_ai judge1`) and report.json in the same run folder.
 Examples are the 3 bank highlights of the asked clause closest to the quote,
 never from the same company as the contract. Replies are cached.
 """
@@ -10,7 +10,6 @@ from pathlib import Path
 
 import psycopg
 from dotenv import load_dotenv
-from verify_answers import score
 
 from cuad_ai.cache import cached
 from cuad_ai.clauses import clause_questions, make_clause_prompt
@@ -18,6 +17,7 @@ from cuad_ai.embed import embed_texts, load_model, vector_literal
 from cuad_ai.extract import extract_json, load_prompt
 from cuad_ai.llm import call_model
 from cuad_ai.loader import load_contracts
+from cuad_ai.pipeline.judge_quote import score
 from cuad_ai.settings import database_url, env_flag
 
 TEMPLATE = "prompts/verify_quote_examples.txt"
@@ -53,9 +53,10 @@ def ask(prompt_text, clause, question, quote, examples, call):
         return None, "none", 0
 
 
-def main():
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else list(argv)
     load_dotenv()
-    folder = Path(sys.argv[1])
+    folder = Path(args[0])
     rows = json.loads((folder / "verified.json").read_text(encoding="utf-8"))
     report = json.loads((folder / "report.json").read_text(encoding="utf-8"))["rows"]
     quotes = {(r["title"], r["clause"]): " ... ".join(r["quotes"]) for r in report}

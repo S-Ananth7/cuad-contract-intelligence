@@ -31,7 +31,7 @@ Run date: 2026-11-08. The 102 official test contracts were scored once, after th
 | Official split | 408 training and 102 test contracts, as published with CUAD |
 | Example bank | Only training contracts that share no company with the test set. Examples from the same company as the scored contract are never used |
 | Learned keywords | Learned from training highlights only. Test contracts have no embedded highlights, so test labels cannot reach them |
-| Risk table | Built once from the 60 validation contracts (`scripts/freeze_risk.py`) and read from `evals/risk_table.json`. It is never learned from the contracts being scored |
+| Risk table | Built once from the 60 validation contracts (`python -m cuad_ai freeze-risk`) and read from `evals/risk_table.json`. It is never learned from the contracts being scored |
 | Frozen settings | Fixed before the test run and not changed afterwards (listed below) |
 | One run | The test run is guarded by `CONFIRM_TEST=yes`. It was run once |
 
@@ -94,11 +94,11 @@ Any change from here is development. The test set has been used once and is not 
 ## 8. Reproduce
 
 ```powershell
-$env:SET="test"; $env:CONFIRM_TEST="yes"; $env:K="10"; $env:LIMIT="102"; $env:OFFSET="0"; python evals\run_rag.py
-$F = "<run folder printed by run_rag.py>"
-python scripts\gate_features.py $F\report.json
-python scripts\route_answers.py $F evals\risk_table.json
-python scripts\verify_answers.py $F
-python scripts\verify_with_examples.py $F
-python scripts\final_answers.py $F
+$env:SET="test"; $env:CONFIRM_TEST="yes"; $env:K="10"; $env:LIMIT="102"; $env:OFFSET="0"; python -m cuad_ai extract
+$F = "<run folder printed by the extract step>"
+python -m cuad_ai gate $F\report.json
+python -m cuad_ai route $F evals\risk_table.json
+python -m cuad_ai judge1 $F
+python -m cuad_ai judge2 $F
+python -m cuad_ai finalize $F
 ```

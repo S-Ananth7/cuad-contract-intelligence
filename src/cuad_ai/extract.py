@@ -31,7 +31,7 @@ def parse_reply(reply: str) -> GoverningLaw:
     return GoverningLaw.model_validate(data)
 
 
-def extract_governing_law(contract_text: str, prompt_text: str, call=call_model) -> dict:
+def extract_clause(contract_text: str, prompt_text: str, call=call_model) -> dict:
     """Run one contract through the whole chain. Return one row of data. Never prints."""
     row = {
         "found": None,

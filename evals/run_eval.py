@@ -5,7 +5,7 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 
-from cuad_ai.extract import extract_governing_law, load_prompt
+from cuad_ai.extract import extract_clause, load_prompt
 from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contracts, load_splits
 from cuad_ai.metrics import quotes_overlap, summarize
 from cuad_ai.settings import env_text
@@ -58,7 +58,7 @@ def main():
             raise SystemExit(f"title not found in CUAD: {title}")
         gold = get_gold_quotes(contract, CLAUSE)
 
-        row = extract_governing_law(get_text(contract), prompt_text)
+        row = extract_clause(get_text(contract), prompt_text)
         row["title"] = title
         row["gold_found"] = len(gold) > 0
         row["quote_match"] = quotes_overlap(row["quotes"], gold)

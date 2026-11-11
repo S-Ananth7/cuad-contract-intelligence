@@ -1,5 +1,6 @@
 """Keep a finished run in Postgres, so runs can be listed and compared with SQL."""
 
+import json
 from pathlib import Path
 
 from psycopg.rows import dict_row
@@ -12,6 +13,31 @@ DECISIONS = ("accept", "reject", "queue", "not_found")
 def create_tables(conn):
     """Create the runs and answers tables and the run_scores view if they are missing."""
     conn.execute(SQL_PATH.read_text(encoding="utf-8"))
+
+
+def _read(path):
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def read_run_folder(folder):
+    """Read a saved run as (report, decisions, queue).
+
+    Two layouts are understood: the committed evidence folder (report_summary.json + decisions.json) and a fresh
+    run folder from the pipeline (report.json + final.json), whose run id is the folder name.
+    """
+    folder = Path(folder)
+    if (folder / "report_summary.json").exists():
+        report, decisions = _read(folder / "report_summary.json"), _read(folder / "decisions.json")
+    elif (folder / "final.json").exists():
+        full = _read(folder / "report.json")
+        report = {"run_id": folder.name, "meta": full["meta"], "summary": full["summary"]}
+        decisions = _read(folder / "final.json")
+    else:
+        raise FileNotFoundError(
+            f"no saved run in {folder}: expected report_summary.json + decisions.json, or report.json + final.json"
+        )
+    queue = _read(folder / "queue.json") if (folder / "queue.json").exists() else []
+    return report, decisions, queue
 
 
 def run_fields(report):

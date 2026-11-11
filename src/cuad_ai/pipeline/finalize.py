@@ -39,8 +39,9 @@ def decide(report_row, answer):
     return "queue", "judges_disagree"
 
 
-def main():
-    folder = Path(sys.argv[1])
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else list(argv)
+    folder = Path(args[0])
     report = json.loads((folder / "report.json").read_text(encoding="utf-8"))["rows"]
     answers = {(r["title"], r["clause"]): r
                for r in json.loads((folder / "verified_examples.json").read_text(encoding="utf-8"))}

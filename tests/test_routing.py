@@ -2,7 +2,8 @@ import json
 import sys
 
 import pytest
-import route_answers as ra
+
+from cuad_ai.pipeline import route as ra
 
 
 def row(clause="Governing Law", rank=1, risk=0.1):

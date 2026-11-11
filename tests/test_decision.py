@@ -1,9 +1,10 @@
 import json
 import sys
 
-import final_answers as fa
 import pytest
-import run_rag
+
+from cuad_ai.pipeline import extraction as run_rag
+from cuad_ai.pipeline import finalize as fa
 
 
 def report_row(**changes):

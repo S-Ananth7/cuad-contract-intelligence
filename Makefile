@@ -24,7 +24,7 @@ db-shell:  ## Open psql inside the container
 	docker compose exec db psql -U cuad -d cuad
 
 pipeline:  ## Run extract, route, review and decide (see README for the settings)
-	python scripts/run_all.py
+	python -m cuad_ai pipeline
 
 load-run:  ## Store the committed final test run in Postgres (python scripts/load_run.py <folder> for another)
 	python scripts/load_run.py

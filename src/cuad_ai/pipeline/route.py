@@ -4,7 +4,7 @@ Confidence = the asked clause is the closest of all 41 clauses to the quote
 (from gate_features.json).
 Risk = how often this clause was a false alarm.
   - No table given: learned from the OTHER half of the contracts (two halves).
-  - Table given (from freeze_risk.py): taken from that file, so the contracts
+  - Table given (from `cuad_ai freeze-risk`): taken from that file, so the contracts
     being routed never supply their own risk.
 """
 import json
@@ -36,7 +36,7 @@ def risk_function(train_rows):
 
 
 def frozen_risk(path):
-    """Return clause -> risk, from the counts saved by freeze_risk.py."""
+    """Return clause -> risk, from the counts saved by `cuad_ai freeze-risk`."""
     return smoothed(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
@@ -58,11 +58,12 @@ def route(rows):
     return rows
 
 
-def main():
-    folder = Path(sys.argv[1])
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else list(argv)
+    folder = Path(args[0])
     rows = json.loads((folder / "gate_features.json").read_text(encoding="utf-8"))
-    if len(sys.argv) > 2:
-        risk = frozen_risk(sys.argv[2])
+    if len(args) > 1:
+        risk = frozen_risk(args[1])
         for r in rows:
             r["risk"] = round(risk(r["clause"]), 3)
             r["route"] = decide(r)

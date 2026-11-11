@@ -1,6 +1,7 @@
 """The official test set stays locked unless the caller explicitly confirms."""
 import pytest
-import run_rag
+
+from cuad_ai.pipeline import extraction as run_rag
 
 
 @pytest.fixture

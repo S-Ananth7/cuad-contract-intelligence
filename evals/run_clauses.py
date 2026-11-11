@@ -7,7 +7,7 @@ from pathlib import Path
 
 from cuad_ai.cache import cached
 from cuad_ai.clauses import clause_questions, make_clause_prompt
-from cuad_ai.extract import extract_governing_law, load_prompt
+from cuad_ai.extract import extract_clause, load_prompt
 from cuad_ai.llm import call_model
 from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contracts, load_splits
 from cuad_ai.metrics import quotes_overlap, summarize
@@ -116,7 +116,7 @@ def main():
                 if (title, clause) in done:
                     continue
                 gold = get_gold_quotes(contract, clause)
-                row = extract_governing_law(text, make_clause_prompt(template, clause, questions[clause]), call=call)
+                row = extract_clause(text, make_clause_prompt(template, clause, questions[clause]), call=call)
                 row["title"], row["clause"] = title, clause
                 row["gold_found"] = len(gold) > 0
                 row["quote_match"] = quotes_overlap(row["quotes"], gold)

@@ -1,3 +1,8 @@
+"""Stage 1: ask the model about every clause of every contract in the chosen set (SET, K, LIMIT, OFFSET).
+
+Excerpts come from hybrid retrieval, every quote is checked against the contract, and a reply that cannot be
+used is retried once. Returns the run folder. SET=test needs CONFIRM_TEST=yes and should be run once.
+"""
 import json
 import os
 import time
@@ -10,7 +15,7 @@ from dotenv import load_dotenv
 from cuad_ai.cache import cached
 from cuad_ai.clauses import clause_questions, make_clause_prompt
 from cuad_ai.context import excerpts
-from cuad_ai.extract import extract_governing_law, load_prompt
+from cuad_ai.extract import extract_clause, load_prompt
 from cuad_ai.llm import call_model
 from cuad_ai.loader import get_contract, get_gold_quotes, get_text, load_contracts
 from cuad_ai.metrics import quotes_overlap, summarize
@@ -41,7 +46,8 @@ def official_test_titles():
     return {contract["title"] for contract in data}
 
 
-def main():
+def main(argv=None):
+    """Settings come from the environment, so extra arguments are ignored."""
     load_dotenv()
     contracts = load_contracts()
     questions = clause_questions(contracts)
@@ -95,10 +101,10 @@ def main():
 
                     gold = get_gold_quotes(contract, clause)
                     prompt = make_clause_prompt(template, clause, questions[clause])
-                    row = extract_governing_law(context, prompt, call=call)
+                    row = extract_clause(context, prompt, call=call)
                     row["retried"], row["unsolved"] = False, False
                     if needs_retry(row):
-                        again = extract_governing_law(context, prompt + RETRY_NOTE, call=call)
+                        again = extract_clause(context, prompt + RETRY_NOTE, call=call)
                         spent_in = row["tokens_in"] + again["tokens_in"]
                         spent_out = row["tokens_out"] + again["tokens_out"]
                         solved = not needs_retry(again)
@@ -124,6 +130,7 @@ def main():
     print(summarize(rows))
     print("run saved:", path)
     log_run(run_id, summarize(rows), info)
+    return path.parent
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import pytest
 
-from cuad_ai.extract import build_prompt, extract_governing_law, load_prompt, parse_reply
+from cuad_ai.extract import build_prompt, extract_clause, load_prompt, parse_reply
 
 INSTRUCTIONS = "Find the governing law sentence. Return JSON."
 CONTRACT = "This Agreement is governed by the laws of Texas."
@@ -71,11 +71,11 @@ def test_parse_wrong_shape_raises():
     with pytest.raises(ValueError):
         parse_reply('{"found": "banana", "quotes" :[]}')
         
-# --- extract_governing_law ---
+# --- extract_clause ---
 
 
 def test_real_quote_is_accepted():
-    row = extract_governing_law(ROW_CONTRACT, "instructions", call=fake_call(REAL))
+    row = extract_clause(ROW_CONTRACT, "instructions", call=fake_call(REAL))
     assert row["found"] is True
     assert row["value"] == "Switzerland"
     assert row["quotes_real"] is True
@@ -84,27 +84,27 @@ def test_real_quote_is_accepted():
 
    
 def test_invented_quote_is_rejected():
-    row = extract_governing_law(ROW_CONTRACT, "instructions", call=fake_call(INVENTED))
+    row = extract_clause(ROW_CONTRACT, "instructions", call=fake_call(INVENTED))
     assert row["quotes_real"] is False
 
 
 def test_found_without_has_no_proof():
-    row = extract_governing_law(ROW_CONTRACT, "instructions", call=fake_call(FOUND_NO_QUOTES))
+    row = extract_clause(ROW_CONTRACT, "instructions", call=fake_call(FOUND_NO_QUOTES))
     assert row["quotes_real"] is False
 
 
 def test_not_found_is_fine():
-    row = extract_governing_law(ROW_CONTRACT, "instructions", call=fake_call(NOT_FOUND))
+    row = extract_clause(ROW_CONTRACT, "instructions", call=fake_call(NOT_FOUND))
     assert row["found"] is False
     assert row["quotes_real"] is True
 
 
 def test_garbage_reply_is_recorded_not_crashed():
-    row = extract_governing_law(ROW_CONTRACT, "instructions", call=fake_call("sorry, no"))
+    row = extract_clause(ROW_CONTRACT, "instructions", call=fake_call("sorry, no"))
     assert row["error"] == "parse failed"
     assert row["found"] is None
 
     
 def test_failed_call_is_recorded_not_crashed():
-    row = extract_governing_law(ROW_CONTRACT, "instructions", call=broken_call)
+    row = extract_clause(ROW_CONTRACT, "instructions", call=broken_call)
     assert row["error"] == "call failed: RuntimeError"

@@ -11,6 +11,9 @@ dependencies = ["pydantic", "openai", "python-dotenv", "psycopg[binary]", "faste
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "pre-commit"]
 
+[project.scripts]
+cuad = "cuad_ai.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

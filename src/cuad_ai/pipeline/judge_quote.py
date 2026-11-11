@@ -1,6 +1,6 @@
 """Stage 2: ask the model about each REVIEW answer (quote + clause question only), then score.
 
-Reads routing.json (from route_answers.py) and report.json in the same run folder.
+Reads routing.json (from `cuad_ai route`) and report.json in the same run folder.
 Model replies are cached, so a stopped run resumes where it stopped at no cost.
 """
 import json
@@ -37,9 +37,10 @@ def score(label, kept, gold_total):
     print(f"{label:34}{real:>5}{false:>6}{gold_total - real:>6}{precision:>11.3f}{real / gold_total:>9.3f}")
 
 
-def main():
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else list(argv)
     load_dotenv()
-    folder = Path(sys.argv[1])
+    folder = Path(args[0])
     rows = json.loads((folder / "routing.json").read_text(encoding="utf-8"))
     report = json.loads((folder / "report.json").read_text(encoding="utf-8"))["rows"]
     quotes = {(r["title"], r["clause"]): " ... ".join(r["quotes"]) for r in report}

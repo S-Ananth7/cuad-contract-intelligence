@@ -23,13 +23,13 @@ Goal: raise precision without losing much recall, without a person in the loop, 
 
 Five small scripts, run in this order:
 
-| Script | What it does | Model calls |
+| Command (`python -m cuad_ai ...`) | What it does | Model calls |
 |---|---|---|
-| `scripts/gate_features.py` | For each found answer, how close is the quote to each clause's lawyer examples | none |
-| `scripts/route_answers.py` | Sorts answers into accept or review | none |
-| `scripts/verify_answers.py` | Judge 1: quote + clause question only | one per review answer |
-| `scripts/verify_with_examples.py` | Judge 2: same, plus 3 lawyer examples (few-shot) | one per review answer |
-| (final step, by hand for now) | Keep answer only if both judges say yes | none |
+| `gate` | For each found answer, how close is the quote to each clause's lawyer examples | none |
+| `route` | Sorts answers into accept or review | none |
+| `judge1` | Judge 1: quote + clause question only | one per review answer |
+| `judge2` | Judge 2: same, plus 3 lawyer examples (few-shot) | one per review answer |
+| `finalize` | Accept, reject or queue every question; both judges must say yes to accept a doubtful answer | none |
 
 ## 3. Step by step, with real examples
 
@@ -154,11 +154,12 @@ Input tokens: about 2,100 to 2,200 per question for retrieval (the whole-contrac
 ## 7. Reproduce
 
 ```powershell
-$env:SET="validation"; $env:K="10"; $env:LIMIT="30"; $env:OFFSET="30"; python evals\run_rag.py
-python scripts\gate_features.py <run folder>\report.json
-python scripts\route_answers.py <run folder>
-python scripts\verify_answers.py <run folder>
-python scripts\verify_with_examples.py <run folder>
+$env:SET="validation"; $env:K="10"; $env:LIMIT="30"; $env:OFFSET="30"; python -m cuad_ai extract
+python -m cuad_ai gate <run folder>\report.json
+python -m cuad_ai route <run folder>
+python -m cuad_ai judge1 <run folder>
+python -m cuad_ai judge2 <run folder>
+python -m cuad_ai finalize <run folder>
 ```
 
 `OFFSET=0` gives the first 30 validation contracts, `OFFSET=30` the next 30.

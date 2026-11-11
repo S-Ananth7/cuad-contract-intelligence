@@ -77,10 +77,23 @@ python scripts/embed_highlights.py
 
 ```
 $env:SET="validation"; $env:LIMIT="5"; $env:K="10"
-python scripts/run_all.py
+python -m cuad_ai pipeline
 ```
 
-`run_all.py` runs extraction, the gate, both judges and the final decision, and prints the score table. Results land in `evals/runs/<run folder>/`. Identical model calls are cached in `evals/cache/`; set `NO_CACHE=1` to bypass it.
+`pipeline` runs extraction, the gate, both judges and the final decision, and prints the score table. Results land in `evals/runs/<run folder>/`. Identical model calls are cached in `evals/cache/`; set `NO_CACHE=1` to bypass it.
+
+Every stage also runs alone, and `python -m cuad_ai --help` lists them:
+
+| Command | Stage |
+|---|---|
+| `extract` | Retrieve excerpts, ask the model, verify and retry the quotes |
+| `gate` | Compare each quote with the lawyers' examples of all 41 clauses |
+| `route` | Split answers into accept and review using the frozen risk table |
+| `judge1`, `judge2` | The two judges (the second also sees lawyer examples) |
+| `finalize` | Accept, reject or queue every question and print the scores |
+| `freeze-risk` | Write `evals/risk_table.json` from validation runs |
+
+6. **Keep the run in Postgres** (optional). `python scripts/load_run.py evals/runs/<run folder>` stores the run so runs can be compared with SQL; with no argument it loads the committed final test run. The `run_scores` view recomputes accepted, rejected, queued, precision and recall from the stored answers.
 
 ## Development
 
@@ -96,11 +109,13 @@ Database tests skip when no database is reachable, so the suite runs on a fresh 
 ## Repository layout
 
 ```
-src/cuad_ai/   package: data loading, ingestion, embeddings, search, extraction, validation, metrics, settings
-scripts/       data loaders, embedding jobs, pipeline steps (gate, route, review, final decision), analysis helpers
-evals/         runners, frozen risk table, split files, run log (results.md); run output is git-ignored
+src/cuad_ai/   package: data loading, ingestion, embeddings, search, extraction, validation, metrics, settings,
+               run storage; pipeline/ holds the stages and cli.py the single command (python -m cuad_ai)
+scripts/       data loaders, embedding jobs, run loader, analysis helpers
+evals/         baseline and earlier experiment runners, frozen risk table, split files, run log (results.md);
+               run output is git-ignored
 prompts/       extraction and judge prompts
-sql/           database schema
+sql/           database schema (schema.sql) and run history tables (runs.sql)
 docker/        database initialisation
 tests/         unit tests with fake data; database tests roll back
 notes/         design decisions, evaluation protocol, final test result
@@ -127,7 +142,7 @@ notes/         design decisions, evaluation protocol, final test result
 
 ## Roadmap
 
-Done: evaluation, retrieval, extraction, quote verification, routing, judges, retry, human queue, tests, one place for settings, CI, Docker. Next: results stored in Postgres, a thin API, basic monitoring, and moving the pipeline steps from `scripts/` into the package.
+Done: evaluation, retrieval, extraction, quote verification, routing, judges, retry, human queue, tests, one place for settings, CI, Docker, run history in Postgres, pipeline in the package behind one command. Next: a thin API and basic monitoring (queue rate, invented-quote rate, tokens per question).
 
 ## License and citation
 

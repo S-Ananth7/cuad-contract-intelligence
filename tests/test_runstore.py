@@ -6,6 +6,7 @@ import pytest
 from cuad_ai.runstore import (
     answer_rows,
     create_tables,
+    read_run_folder,
     run_fields,
     run_scores,
     save_run,
@@ -106,3 +107,26 @@ def test_the_database_refuses_an_unknown_decision(conn):
             "INSERT INTO answers (run_id, title, clause, decision, gold_found) VALUES (%s, 'x', 'y', 'maybe', false)",
             (run_id,),
         )
+
+
+def test_a_fresh_pipeline_run_folder_can_be_read(tmp_path):
+    folder = tmp_path / "20261111_120000_rag_demo"
+    folder.mkdir()
+    meta = {"model": "m", "k": 10, "contracts": 1, "date": "2026-11-11"}
+    (folder / "report.json").write_text(json.dumps({"meta": meta, "summary": {"contracts": 1}, "rows": []}))
+    (folder / "final.json").write_text(json.dumps([decision("A", "Parties", "accept", True)]))
+    report, decisions, queue = read_run_folder(folder)
+    assert report["run_id"] == "20261111_120000_rag_demo"
+    assert report["meta"] == meta
+    assert len(decisions) == 1 and queue == []
+
+
+def test_the_committed_evidence_folder_can_be_read():
+    report, decisions, queue = read_run_folder(FINAL)
+    assert (report["run_id"], len(decisions), len(queue)) == (
+        "20261108_172552_rag_clause_rag_deepseek-v4-flash_k10_102", 4182, 184)
+
+
+def test_a_folder_with_no_run_is_refused(tmp_path):
+    with pytest.raises(FileNotFoundError, match="no saved run"):
+        read_run_folder(tmp_path)

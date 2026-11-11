@@ -16,6 +16,7 @@ services:
       # Run once, on first start, in this order.
       - ./docker/00_extensions.sql:/docker-entrypoint-initdb.d/00_extensions.sql:ro
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/10_schema.sql:ro
+      - ./sql/runs.sql:/docker-entrypoint-initdb.d/20_runs.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cuad -d cuad"]
       interval: 5s

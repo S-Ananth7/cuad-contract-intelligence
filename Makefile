@@ -1,4 +1,4 @@
-.PHONY: help setup lint test check db-up db-down db-shell pipeline
+.PHONY: help setup lint test check db-up db-down db-shell pipeline load-run
 
 help:  ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /  /'
@@ -25,3 +25,6 @@ db-shell:  ## Open psql inside the container
 
 pipeline:  ## Run extract, route, review and decide (see README for the settings)
 	python scripts/run_all.py
+
+load-run:  ## Store the committed final test run in Postgres (python scripts/load_run.py <folder> for another)
+	python scripts/load_run.py

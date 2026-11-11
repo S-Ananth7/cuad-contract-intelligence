@@ -6,11 +6,17 @@ build-backend = "setuptools.build_meta"
 name = "cuad-ai"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["pydantic", "openai", "python-dotenv", "psycopg[binary]", "fastembed"]
+dependencies = [
+    "pydantic>=2",
+    "openai>=1",
+    "python-dotenv>=1",
+    "psycopg[binary]>=3.1",
+    "fastembed>=0.3",
+]
 
 [project.optional-dependencies]
-api = ["fastapi", "uvicorn"]
-dev = ["pytest", "ruff", "pre-commit", "httpx"]
+api = ["fastapi>=0.100", "uvicorn>=0.20"]
+dev = ["pytest>=7", "ruff>=0.4", "pre-commit>=3", "httpx>=0.24"]
 
 [project.scripts]
 cuad = "cuad_ai.cli:main"

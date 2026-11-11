@@ -55,10 +55,10 @@ Out of scope for now: a user interface, authentication, multi-tenant isolation, 
 | 3 | Example bank | 10,848 embedded lawyer highlights from training contracts that share no company with the test set | BUILT |
 | 4 | Retrieve | Per clause: first 4 chunks for header clauses (name, parties, dates); otherwise example search (best match to bank examples) merged with learned keywords by reciprocal rank fusion. 10 chunks go to the model | BUILT |
 | 5 | Extract | One model call per clause on the merged excerpts. Returns found, quotes. Prompt file `prompts/clause_rag.txt` | BUILT |
-| 6 | Validate | Deterministic: reply parses, schema valid, every quote appears word for word in the excerpts and contract. One retry with a stricter prompt; still bad goes to the queue | PARTIAL: in `cuad_ai/pipeline/extraction.py`, not yet run live |
-| 7 | Route | Confidence = asked clause is the closest of 41 to the quote. Risk = per-clause false alarm rate from other contracts. Accept or review | PARTIAL (script) |
-| 8 | Review | Two cheap model calls on the quote only: one plain, one with 3 lawyer examples. Keep only if both say yes | PARTIAL (script) |
-| 9 | Decide and store | `final_answers.py` applies the policy and writes `final.json` and `queue.json` per run. A database table is still planned | PARTIAL |
+| 6 | Validate | Deterministic: reply parses, schema valid, every quote appears word for word in the excerpts and contract. One retry with a stricter prompt; still bad goes to the queue | BUILT: `cuad_ai/pipeline/extraction.py`; ran live on the test set (25 retried, 3 invented quotes left, 7 unresolved all queued) |
+| 7 | Route | Confidence = asked clause is the closest of 41 to the quote. Risk = per-clause false alarm rate from other contracts. Accept or review | BUILT: `cuad_ai/pipeline/gate.py`, `route.py`; frozen `evals/risk_table.json` |
+| 8 | Review | Two cheap model calls on the quote only: one plain, one with 3 lawyer examples. Keep only if both say yes | BUILT: `cuad_ai/pipeline/judge_quote.py`, `judge_examples.py` |
+| 9 | Decide and store | `cuad_ai/pipeline/finalize.py` applies the policy and writes `final.json` and `queue.json` per run; `scripts/load_run.py` stores the run in Postgres (`runs`, `answers`, view `run_scores`) | BUILT |
 
 ## 5. Data model
 
@@ -153,7 +153,7 @@ Levers: parallel calls per contract (the provider concurrency limit applies), re
 | Response cache keyed on model, settings and prompt, so a stopped run resumes at no cost | BUILT |
 | Run stops after 3 consecutive errors | BUILT |
 | Report written every 10 rows | BUILT |
-| Retry once on invalid or invented quote, stricter prompt (`cuad_ai/pipeline/extraction.py`) | PARTIAL: written, not yet run live |
+| Retry once on invalid or invented quote, stricter prompt (`cuad_ai/pipeline/extraction.py`) | BUILT: ran live on the test set (25 answers retried) |
 | Whole-contract fallback for clauses that stay uncertain | PLANNED |
 | Idempotent job per contract (safe to re-run) | PLANNED |
 
@@ -196,7 +196,7 @@ A result is only meaningful if it can be reproduced. Every run records the model
 ## 15. Roadmap
 
 1. Run the retry live on a small validation sample and confirm it fixes invented quotes (7 and 2 on the new set).
-2. One command for the whole pipeline: `python -m cuad_ai pipeline` (written, to be run).
+2. One command for the whole pipeline: `python -m cuad_ai pipeline` (built and covered by tests; the final test run itself used the stages one by one).
 3. Parallel execution and a per-contract job queue.
 4. Per-clause `k` and a stronger model (`deepseek-v4-pro`) on the doubtful clauses only.
 5. Whole-contract fallback for clauses still uncertain after review.

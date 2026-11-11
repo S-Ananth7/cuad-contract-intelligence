@@ -138,7 +138,7 @@ make check          # lint and tests, what CI runs (or: ruff check . ; python -m
 pre-commit install  # optional: lint and secret check before each commit
 ```
 
-Database tests skip when no database is reachable, so the suite runs on a fresh clone. CI runs lint and the full suite against a pgvector service on every push.
+Database tests skip when no database is reachable, so the suite runs on a fresh clone. CI runs lint and the full suite against a pgvector service on every push, on Python 3.10 and 3.12.
 
 ```
 src/cuad_ai/   package: ingestion, search, extraction, validation, metrics, run storage, monitoring, API;

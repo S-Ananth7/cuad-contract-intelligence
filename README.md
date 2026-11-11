@@ -13,7 +13,7 @@ Scored once on the 102 official test contracts (4,182 questions), after the desi
 | **Full pipeline, no human involved** | **0.757** | **0.916** |
 | If a person resolved the queue perfectly (upper bound, not measured) | 0.762 | 0.943 |
 
-- Precision is the share of accepted answers that match a lawyer label. Recall is the share of lawyer-marked clauses that were accepted.
+- The headline is scored at clause level. Precision is the share of accepted answers where the lawyers marked that clause in the contract. Recall is the share of lawyer-marked clauses that were accepted. A stricter check also requires the model's quote to overlap the passage the lawyers highlighted: precision 0.703, recall 0.850 (1,058 of 1,505 accepted answers; recomputed by a test from the committed decisions). Of the 81 answers that lose, 34 are Document Name and date clauses.
 - Of 4,182 questions, 1,505 were accepted automatically, 273 rejected, and 184 queued for a person (about 1.8 per contract). Only 12 of the 273 rejected answers were real clauses.
 - Precision has a margin of error of about 0.02. Invented quotes in the whole test run: 3.
 - Cost: about 2,430 input tokens per question, against about 12,770 when the whole contract is sent (roughly 81% less; the whole-contract figure comes from 9 contracts).
@@ -54,7 +54,7 @@ Requires Python 3.10 or newer and Docker (for Postgres with pgvector).
 ```
 python -m venv venv
 .\venv\Scripts\Activate.ps1        # Linux/macOS: source venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,api]"
 Copy-Item .env.example .env        # Linux/macOS: cp .env.example .env
 ```
 
@@ -95,11 +95,30 @@ Every stage also runs alone, and `python -m cuad_ai --help` lists them:
 
 6. **Keep the run in Postgres** (optional). `python scripts/load_run.py evals/runs/<run folder>` stores the run so runs can be compared with SQL; with no argument it loads the committed final test run. The `run_scores` view recomputes accepted, rejected, queued, precision and recall from the stored answers.
 
+## API and monitoring
+
+A small read-only API serves stored runs. It does not run extraction: that is a long, costly job and belongs in a queue, not in a web request.
+
+```
+python scripts/load_run.py                 # store the committed final run (or pass a run folder)
+python -m cuad_ai serve                    # http://127.0.0.1:8000/docs, or: serve <host> <port>
+```
+
+| Endpoint | Returns |
+|---|---|
+| `GET /health`, `GET /ready` | The process is up; the database answers (503 when it does not) |
+| `GET /runs` | Every stored run with accepted, rejected, queued, precision and recall |
+| `GET /runs/{id}` | The scores and the monitoring numbers below |
+| `GET /runs/{id}/queue?limit=&offset=` | The answers waiting for a person: quotes, reason, what the judges thought it looked like |
+| `GET /metrics` | The monitoring numbers of the latest run as Prometheus text |
+
+Monitoring numbers need no lawyer labels, because in use you cannot compute precision. They are the signals you can always see: the share of questions accepted, rejected and queued, queued answers per contract, the retry rate, the invented-quote rate, the queue reasons, and extraction tokens and seconds per question. A sudden change in one of them means the model, the prompt or the documents changed. On the final test run: 4.4% of questions queued (1.8 per contract), 0.6% retried, 0.07% invented quotes.
+
 ## Development
 
 | Task | Command |
 |---|---|
-| Install with dev tools | `pip install -e ".[dev]"` |
+| Install with dev tools | `pip install -e ".[dev,api]"` |
 | Lint | `ruff check .` |
 | Tests | `python -m pytest -q` |
 | Both (what CI runs) | `make check` |
@@ -110,7 +129,8 @@ Database tests skip when no database is reachable, so the suite runs on a fresh 
 
 ```
 src/cuad_ai/   package: data loading, ingestion, embeddings, search, extraction, validation, metrics, settings,
-               run storage; pipeline/ holds the stages and cli.py the single command (python -m cuad_ai)
+               run storage, monitoring numbers, the read-only API; pipeline/ holds the stages and
+               cli.py the single command (python -m cuad_ai)
 scripts/       data loaders, embedding jobs, run loader, analysis helpers
 evals/         baseline and earlier experiment runners, frozen risk table, split files, run log (results.md);
                run output is git-ignored
@@ -125,6 +145,9 @@ notes/         design decisions, evaluation protocol, final test result
 
 | Read | For |
 |---|---|
+| [`docs/architecture.md`](docs/architecture.md) | How the system is built: components, data model, data flow, operations |
+| [`docs/evaluation-protocol.md`](docs/evaluation-protocol.md) | Splits, leakage rules, metric definitions, what is measured and what is not |
+| [`docs/adr/`](docs/adr/README.md) | Seven decision records: what was chosen, why, and what it costs |
 | [`notes/final_test_result.md`](notes/final_test_result.md) | The result, the controls, the frozen settings |
 | [`notes/production_design.md`](notes/production_design.md) | The production design and decision policy |
 | [`notes/routing_and_review.md`](notes/routing_and_review.md) | Gate, risk table, two judges, queue |
@@ -142,7 +165,7 @@ notes/         design decisions, evaluation protocol, final test result
 
 ## Roadmap
 
-Done: evaluation, retrieval, extraction, quote verification, routing, judges, retry, human queue, tests, one place for settings, CI, Docker, run history in Postgres, pipeline in the package behind one command. Next: a thin API and basic monitoring (queue rate, invented-quote rate, tokens per question).
+Done: evaluation, retrieval, extraction, quote verification, routing, judges, retry, human queue, tests, one place for settings, CI, Docker, run history in Postgres, pipeline in the package behind one command, a thin read-only API and label-free monitoring. Next: architecture notes and decision records, comparing runs over time, error analysis on the accepted-but-wrong answers, and live extraction through a job queue.
 
 ## License and citation
 

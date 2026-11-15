@@ -32,7 +32,7 @@ search-path = ["src"]
 
 [tool.ruff]
 line-length = 120
-src = ["src"]
+src = ["src", "app"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]   # errors, unused names, import order

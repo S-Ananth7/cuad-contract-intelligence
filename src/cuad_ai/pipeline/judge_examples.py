@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 from cuad_ai.cache import cached
 from cuad_ai.clauses import clause_questions, make_clause_prompt
 from cuad_ai.embed import embed_texts, load_model, vector_literal
-from cuad_ai.extract import extract_json, load_prompt
+from cuad_ai.extract import load_prompt
 from cuad_ai.llm import call_model
 from cuad_ai.loader import load_contracts
-from cuad_ai.pipeline.judge_quote import score
+from cuad_ai.pipeline.judge_quote import parse_verdict, score
 from cuad_ai.settings import database_url, env_flag
 
 TEMPLATE = "prompts/verify_quote_examples.txt"
@@ -47,8 +47,8 @@ def ask(prompt_text, clause, question, quote, examples, call):
     prompt = prompt.replace("[EXAMPLES]", examples).replace("[QUOTE]", quote)
     try:
         result = call(prompt)
-        data = json.loads(extract_json(result["text"]))
-        return bool(data["is_this_clause"]), str(data.get("looks_like", "none")), result["tokens_in"]
+        verdict, looks_like = parse_verdict(result["text"])
+        return verdict, looks_like, result["tokens_in"]
     except Exception:
         return None, "none", 0
 
@@ -81,8 +81,8 @@ def main(argv=None):
     (folder / "verified_examples.json").write_text(json.dumps(rows), encoding="utf-8")
 
     accepted = [r for r in rows if r["route"] == "accept"]
-    old_yes = [r for r in review if r["verdict"] is not False]
-    new_yes = [r for r in review if r["verdict2"] is not False]
+    old_yes = [r for r in review if r["verdict"] is True]
+    new_yes = [r for r in review if r["verdict2"] is True]
     rejected = [r for r in review if r["verdict2"] is False]
     print(f"\nreview calls: {len(review)} | unreadable: {unreadable} | tokens in: {tokens}")
     print(f"new review rejected {len(rejected)}: real {sum(r['gold_found'] for r in rejected)}, "

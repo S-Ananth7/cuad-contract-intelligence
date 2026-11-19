@@ -19,13 +19,24 @@ from cuad_ai.settings import env_flag
 TEMPLATE = "prompts/verify_quote.txt"
 
 
+def parse_verdict(text):
+    """(is_this_clause, looks_like) from a judge reply.
+
+    The verdict is True or False only for a real JSON boolean. The text "false", a number or null
+    is unreadable (None), never a yes. A missing key raises KeyError.
+    """
+    data = json.loads(extract_json(text))
+    verdict = data["is_this_clause"]
+    return (verdict if isinstance(verdict, bool) else None), str(data.get("looks_like", "none"))
+
+
 def ask(prompt_text, clause, question, quote, call):
     """One yes/no judgement. Returns (is_this_clause, looks_like, tokens_in); None if unreadable."""
     prompt = make_clause_prompt(prompt_text, clause, question).replace("[QUOTE]", quote)
     try:
         result = call(prompt)
-        data = json.loads(extract_json(result["text"]))
-        return bool(data["is_this_clause"]), str(data.get("looks_like", "none")), result["tokens_in"]
+        verdict, looks_like = parse_verdict(result["text"])
+        return verdict, looks_like, result["tokens_in"]
     except Exception:
         return None, "none", 0
 
@@ -61,7 +72,7 @@ def main(argv=None):
     (folder / "verified.json").write_text(json.dumps(rows), encoding="utf-8")
 
     accepted = [r for r in rows if r["route"] == "accept"]
-    yes = [r for r in review if r["verdict"] is not False]  # an unreadable reply keeps the answer
+    yes = [r for r in review if r["verdict"] is True]  # an unreadable reply is not a yes
     rejected = [r for r in review if r["verdict"] is False]
     print(f"\nreview calls: {len(review)} | unreadable: {unreadable} | tokens in: {tokens}")
     print(f"review rejected {len(rejected)}: real {sum(r['gold_found'] for r in rejected)}, false {sum(not r['gold_found'] for r in rejected)}")

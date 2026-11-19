@@ -33,7 +33,7 @@ def decide(report_row, answer):
     if answer["route"] == "accept":
         return "accept", answer["route"]
     first, second = answer.get("verdict"), answer.get("verdict2")
-    if first is None or second is None:  # a missing or unreadable judge reply never counts as a yes
+    if not isinstance(first, bool) or not isinstance(second, bool):  # missing, unreadable or not a real true/false
         return "queue", "judge_missing"
     if first and second:
         return "accept", "both_judges_yes"

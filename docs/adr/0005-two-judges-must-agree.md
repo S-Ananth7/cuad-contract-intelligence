@@ -8,7 +8,7 @@ After the gate, doubtful answers still contain many false alarms. One judge rais
 
 ## Decision
 
-Two prompts review each doubtful answer. Judge 1 sees the quote and the clause question. Judge 2 also sees three lawyer examples of the clause, never from the same company. Both yes accepts, both no rejects, and a disagreement is queued for a person.
+Two prompts review each doubtful answer. Judge 1 sees the quote and the clause question. Judge 2 also sees three lawyer examples of the clause, never from the same company. Both yes accepts, both no rejects, and a disagreement is queued for a person. A judge reply that is missing or unreadable never counts as a yes: the answer is queued (`judge_missing`). In the saved test run no answer was affected.
 
 ## Consequences
 

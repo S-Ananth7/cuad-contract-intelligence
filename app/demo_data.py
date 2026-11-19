@@ -4,6 +4,7 @@ No Streamlit in this file, so it can be tested on its own.
 """
 from __future__ import annotations
 
+import gzip
 import json
 from collections import Counter
 from pathlib import Path
@@ -38,9 +39,9 @@ def load_decisions(folder):
 
 def load_queue(folder):
     rows = _check_rows(_read_json(Path(folder) / "queue.json"), QUEUE_KEYS, "queue.json")
-    for row in rows:  # parse failures have no quotes and no closest-clause list
+    for row in rows:  # parse failures have no quotes; a judge may have named no closest clause
         row["quotes"] = row["quotes"] or []
-        row["looks_like"] = row["looks_like"] or []
+        row["looks_like"] = [name for name in (row["looks_like"] or []) if name]
     return rows
 
 
@@ -73,3 +74,36 @@ def score(rows):
 
 def queue_reasons(queue):
     return Counter(r["reason"] for r in queue).most_common()
+
+
+def load_evidence(folder):
+    """{title: {clause: {"quotes": [...], "gold": [...]}}}: what the system quoted and what lawyers marked."""
+    path = Path(folder) / "evidence.json.gz"
+    if not path.is_file():
+        raise FileNotFoundError(f"Missing file: {path}")
+    try:
+        with gzip.open(path, "rt", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, json.JSONDecodeError) as err:
+        raise ValueError(f"{path} is not valid gzip JSON: {err}") from err
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: expected an object keyed by contract title")
+    return data
+
+
+def evidence_for(evidence, title, clause):
+    return evidence.get(title, {}).get(clause, {"quotes": [], "gold": []})
+
+
+def verdict_text(row, item):
+    """One plain sentence on how the system's answer compares with the lawyers' passages."""
+    quotes, gold = item["quotes"], item["gold"]
+    if row["decision"] == "not_found":
+        return "Missed: the lawyers marked this clause." if gold else "Correctly not found."
+    if not quotes:
+        return "No quote was produced."
+    if not gold:
+        return "The lawyers did not mark this clause."
+    if row["quote_match"]:
+        return "The quote matches one of the lawyers' passages."
+    return "The lawyers marked this clause, but in a different passage."

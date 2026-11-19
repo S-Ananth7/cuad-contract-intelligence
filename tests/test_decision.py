@@ -56,8 +56,9 @@ def test_judges_that_disagree_go_to_the_queue(first, second):
     assert fa.decide(report_row(), answer(verdict=first, verdict2=second)) == ("queue", "judges_disagree")
 
 
-def test_an_unreadable_judge_reply_does_not_count_as_a_no():
-    assert fa.decide(report_row(), answer(verdict=None, verdict2=True)) == ("accept", "both_judges_yes")
+@pytest.mark.parametrize("first, second", [(None, True), (True, None), (None, None), (None, False), (False, None)])
+def test_a_missing_judge_reply_never_accepts(first, second):
+    assert fa.decide(report_row(), answer(verdict=first, verdict2=second)) == ("queue", "judge_missing")
 
 
 def test_final_step_counts_queued_answers_as_not_kept(tmp_path, capsys, monkeypatch):

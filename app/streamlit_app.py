@@ -9,18 +9,22 @@ import streamlit as st
 
 from demo_data import (
     contracts,
+    evidence_for,
     for_contract,
     load_decisions,
+    load_evidence,
     load_extraction_summary,
     load_queue,
     queue_reasons,
     score,
+    verdict_text,
 )
 
 RUN = Path(__file__).resolve().parents[1] / "evals" / "final_test"
 REPO = "https://github.com/S-Ananth7/cuad-contract-intelligence"
 LABELS = {"accept": "Accepted", "reject": "Rejected", "queue": "Sent to review", "not_found": "Not found"}
 TINT = {"Accepted": "#E6F4EA", "Rejected": "#FCE8E6", "Sent to review": "#FFF4E0", "Not found": "#F1F3F4"}
+NAVY, LIGHT = "#1F4E79", "#9DB8D2"
 GATE_RUNG = (0.726, 0.922)  # from evals/final_test/README.md; the other two rungs are computed from the files
 STEPS = [
     ("1  Retrieve", "Pick the passages most likely to hold each of the 41 clause types."),
@@ -40,7 +44,12 @@ st.markdown(
 
 @st.cache_data
 def load_all():
-    return load_decisions(RUN), load_queue(RUN), load_extraction_summary(RUN)
+    return load_decisions(RUN), load_queue(RUN), load_extraction_summary(RUN), load_evidence(RUN)
+
+
+def show_passage(text: str) -> None:
+    """Contract text as plain wrapped code, so symbols like $ are never read as formatting."""
+    st.code(text, language=None, wrap_lines=True)
 
 
 def tint(value: str) -> str:
@@ -48,7 +57,7 @@ def tint(value: str) -> str:
 
 
 try:
-    rows, queue, extraction = load_all()
+    rows, queue, extraction, evidence = load_all()
 except (FileNotFoundError, ValueError) as err:
     st.error(f"Could not load the saved run: {err}")
     st.stop()
@@ -61,7 +70,10 @@ st.markdown(
     "Finds **41 types of clauses** in contracts, quotes the exact words, checks every quote, "
     "and sends doubtful answers to a person."
 )
-st.caption(f"Saved run on 102 held-out CUAD test contracts, scored once. No model is called live. [Source code]({REPO})")
+st.caption(
+    "Saved final run on the 102 official CUAD test contracts, scored end to end once after the design was frozen. "
+    f"No model is called live. [Source code]({REPO})"
+)
 
 with st.container(border=True):
     st.markdown("**How an answer is produced**")
@@ -87,24 +99,28 @@ with tab_results:
         st.subheader("How precision improved")
         ladder = pd.DataFrame(
             [
-                ("1 Extraction only", extraction["precision"], extraction["recall"]),
-                ("2 Plus the gate", *GATE_RUNG),
-                ("3 Plus two judges", final["precision"], final["recall"]),
+                ("1 Extract only", extraction["precision"], extraction["recall"]),
+                ("2 + Gate", *GATE_RUNG),
+                ("3 + Judges", final["precision"], final["recall"]),
             ],
             columns=["Stage", "Precision", "Recall"],
         )
-        st.bar_chart(ladder.set_index("Stage"), height=280)
+        st.bar_chart(ladder.set_index("Stage"), stack=False, color=[NAVY, LIGHT], height=280)
         st.dataframe(ladder.style.format({"Precision": "{:.3f}", "Recall": "{:.3f}"}), hide_index=True, width="stretch")
     with right:
         st.subheader("What happened to the 4,182 questions")
-        st.bar_chart(pd.Series({LABELS[k]: counts.get(k, 0) for k in LABELS}), horizontal=True, height=280)
+        outcome = pd.Series({LABELS[k]: counts.get(k, 0) for k in LABELS})
+        st.bar_chart(outcome, horizontal=True, color=NAVY, height=280)
+        st.caption(" · ".join(f"{name}: {n:,}" for name, n in outcome.items()))
         st.caption("A question is one clause in one contract: 102 contracts × 41 clause types.")
 
     with st.expander("How to read these numbers"):
         st.markdown(
             "- **Precision**: when the system says a clause is there, how often lawyers agree.\n"
             "- **Recall**: of the clauses lawyers found, how many the system also found.\n"
-            "- The test contracts were not used to build or tune the system, and the test was scored once."
+            "- The system was built and tuned on other contracts. The 102 test contracts were scored end to end once, "
+            "after the design was frozen. Early retrieval experiments, which only check whether the right passage is "
+            "found, also looked at all 510 contracts."
         )
 
 with tab_contracts:
@@ -129,8 +145,29 @@ with tab_contracts:
         ],
         columns=["Clause", "Decision", "Reason", "Lawyers marked it", "Retried"],
     )
-    st.caption(f"{len(table)} of {len(mine)} clauses shown")
+    st.caption(f"{len(table)} of {len(mine)} clauses shown. Pick a clause below to see the quote next to the lawyers' passage.")
     st.dataframe(table.style.map(tint, subset=["Decision"]), hide_index=True, width="stretch")
+
+    inspectable = [r for r in mine if LABELS[r["decision"]] in shown]
+    if inspectable:
+        st.subheader("Inspect the evidence")
+        clause = st.selectbox("Clause", [r["clause"] for r in inspectable])
+        row = next(r for r in inspectable if r["clause"] == clause)
+        item = evidence_for(evidence, title, clause)
+        st.write(f"**{LABELS[row['decision']]}.** {verdict_text(row, item)}")
+        quoted, marked = st.columns(2)
+        with quoted:
+            st.markdown("**What the system quoted**")
+            for q in item["quotes"]:
+                show_passage(q)
+            if not item["quotes"]:
+                st.caption("Nothing was quoted.")
+        with marked:
+            st.markdown("**What the lawyers marked**")
+            for g in item["gold"]:
+                show_passage(g)
+            if not item["gold"]:
+                st.caption("The lawyers did not mark this clause.")
 
 with tab_queue:
     reasons = queue_reasons(queue)
@@ -146,7 +183,7 @@ with tab_queue:
             st.caption(f"Reason: {r['reason']} · Lawyers marked this clause: {'yes' if r['gold_found'] else 'no'}")
             if r["quotes"]:
                 for q in r["quotes"]:
-                    st.text(q)  # plain text, so contract symbols are never read as formatting
+                    show_passage(q)
             else:
                 st.write("No quote: the model's reply could not be read.")
             if r["looks_like"]:

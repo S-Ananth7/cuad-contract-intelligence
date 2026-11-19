@@ -8,6 +8,7 @@ Run id: `20261108_172552_rag_clause_rag_deepseek-v4-flash_k10_102`.
 | `report_summary.json` | Model, prompt hash, code commit, settings and the run's summary counts |
 | `decisions.json` | One row per question: the final decision, the reason, the lawyers' label (`gold_found`: the lawyers marked this clause in the contract) and `quote_match` (the model's quote contains, or is contained in, a lawyer's highlighted passage, ignoring spacing) |
 | `queue.json` | The 184 answers sent to a person, with the quotes and which clause the judges thought they looked like |
+| `evidence.json.gz` | For the demo's evidence view: each answer's quotes next to the passages the lawyers marked (quoted passages only, never whole contracts; CUAD is CC BY 4.0). Rebuilt by `scripts/export_evidence.py` from the run's report and `data/CUADv1.json` |
 
 `tests/test_final_test_result.py` recomputes the headline numbers from `decisions.json`
 (1,505 accepted, 1,139 real, precision 0.757, recall 0.916), so the claim and the data cannot drift apart.

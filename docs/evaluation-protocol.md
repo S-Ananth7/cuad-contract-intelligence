@@ -65,7 +65,7 @@ Of 4,182 questions: 1,505 accepted (1,139 real clauses, 1,058 also overlapping a
 ## Changing the system without spoiling the result
 
 - Develop and tune on validation contracts only.
-- The test set has been used once for this design. A new headline number needs contracts that no tuning has seen: carve a new held-out set from train and rebuild the example bank without it.
+- The full pipeline has been scored on the test set once, after the design was frozen. Early retrieval experiments (which only measure whether the right passage is found, with no model involved) also looked at all 510 contracts, so the retrieval numbers on test are not untouched either. A new headline number needs contracts that no tuning has seen: carve a new held-out set from train and rebuild the example bank without it.
 - Re-freeze the risk table when the model or the prompt changes.
 - Record every run: the report stores the model, the prompt hash and the code commit, and `scripts/load_run.py` keeps runs in Postgres for comparison.
 

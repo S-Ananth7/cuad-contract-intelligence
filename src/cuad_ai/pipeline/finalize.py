@@ -10,6 +10,7 @@ Decision for each question:
   review, both judges yes                        -> accept
   review, both judges no                         -> reject
   review, judges disagree                        -> queue (judges_disagree)
+  review, a judge reply missing or unreadable    -> queue (judge_missing)
 Queue items are NOT accepted automatically. The headline score counts them as not kept.
 A person can review the queue; the second score assumes a perfect reviewer and is only an upper bound.
 """
@@ -32,9 +33,11 @@ def decide(report_row, answer):
     if answer["route"] == "accept":
         return "accept", answer["route"]
     first, second = answer.get("verdict"), answer.get("verdict2")
-    if first is not False and second is not False:
+    if first is None or second is None:  # a missing or unreadable judge reply never counts as a yes
+        return "queue", "judge_missing"
+    if first and second:
         return "accept", "both_judges_yes"
-    if first is False and second is False:
+    if not first and not second:
         return "reject", "both_judges_no"
     return "queue", "judges_disagree"
 

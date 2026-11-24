@@ -31,7 +31,7 @@ STEPS = [
     ("2  Extract", "A model quotes the clause's exact words."),
     ("3  Verify", "Code checks every quote appears word for word. One retry if not."),
     ("4  Gate", "Doubtful answers and error-prone clause types are held back."),
-    ("5  Judges", "Two independent checks must both agree."),
+    ("5  Judges", "Two separate checks must both agree."),
     ("6  Decide", "Accept, reject, or send to a person."),
 ]
 
@@ -75,6 +75,11 @@ st.caption(
     f"No model is called live. [Source code]({REPO})"
 )
 
+st.info(
+    "Want to try your own contract? The source includes a live review: upload a contract, see each quote highlighted "
+    f"in the text, and confirm or reject answers. It runs on your own computer: see [Live review]({REPO}#live-review)."
+)
+
 with st.container(border=True):
     st.markdown("**How an answer is produced**")
     for col, (name, text) in zip(st.columns(len(STEPS)), STEPS):
@@ -94,6 +99,12 @@ with tab_results:
         with col.container(border=True):
             st.metric(label, value, help=help_text)
 
+    st.caption(
+        f"Precision {final['precision']:.3f} means about {round(final['precision'] * 100)} of every 100 accepted "
+        "answers were also marked by the lawyers. The others are mistakes, which is why doubtful answers go to a "
+        "person and why accepted answers are worth skimming."
+    )
+
     left, right = st.columns(2)
     with left:
         st.subheader("How precision improved")
@@ -107,6 +118,10 @@ with tab_results:
         )
         st.bar_chart(ladder.set_index("Stage"), stack=False, color=[NAVY, LIGHT], height=280)
         st.dataframe(ladder.style.format({"Precision": "{:.3f}", "Recall": "{:.3f}"}), hide_index=True, width="stretch")
+        st.caption(
+            "Stage 1: the model alone. Stage 2: plus the gate, which holds back doubtful answers. "
+            "Stage 3: plus the two judges. Each stage trades a little recall for higher precision."
+        )
     with right:
         st.subheader("What happened to the 4,182 questions")
         outcome = pd.Series({LABELS[k]: counts.get(k, 0) for k in LABELS})

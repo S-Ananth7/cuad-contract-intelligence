@@ -102,7 +102,8 @@ The data is not in this repository: download CUAD v1 and put `CUADv1.json` and `
 | `judge1`, `judge2` | The two judges (the second also sees lawyer examples) |
 | `finalize` | Accept, reject or queue every question; writes `final.json` and `queue.json` |
 | `freeze-risk` | Write `evals/risk_table.json` from validation runs |
-| `serve` | Start the read-only API |
+| `serve` | Start the API (read-only unless `LIVE_API_KEY` is set) |
+| `worker` | Process uploaded contracts from the live-review queue |
 
 Runs land in `evals/runs/<run folder>/`. Identical model calls are cached in `evals/cache/` (set `NO_CACHE=1` to bypass).
 
@@ -117,6 +118,22 @@ Runs land in `evals/runs/<run folder>/`. Identical model calls are cached in `ev
 
 Monitoring numbers need no lawyer labels: share accepted, rejected and queued, queue per contract, retry rate, invented-quote rate, and tokens and seconds per question.
 
+## Live review
+
+Upload a contract, watch the pipeline run on it, and confirm or reject each answer. It uses the same retrieval, quote check, gate, two judges and decision code as the saved run ([ADR 0008](docs/adr/0008-live-review-reuses-the-pipeline.md)); uploads live in their own tables and never touch the example bank.
+
+```powershell
+docker compose up -d db                       # a database created before this feature needs: psql ... -f sql/live.sql (the page and the worker also apply it)
+python -m cuad_ai worker                      # terminal 1: runs queued uploads (uses LLM_* from .env)
+streamlit run app/live_app.py                 # terminal 2: upload, inspect, confirm or reject
+```
+
+The page shows each answer with its quote highlighted in your contract, both judges' verdicts, and Confirm / Reject buttons that record your name and an optional note beside the machine's decision. Results export to CSV. Limits: 400,000 characters per file, 20 uploads per day, 400,000 tokens per upload (`LIVE_MAX_CHARS`, `LIVE_DAILY_CAP`, `LIVE_TOKEN_CAP`).
+
+To use it from code, set `LIVE_API_KEY` and start `python -m cuad_ai serve`; the endpoints (`POST /submissions`, `GET /submissions/{id}`, `PUT /submissions/{id}/answers/{answer}/review`, `DELETE /submissions/{id}`) then appear in `/docs` and need an `X-API-Key` header.
+
+The 0.757 / 0.916 scores belong to the 102 CUAD test contracts. They do not describe how the system does on your contract.
+
 ## Keeping the result honest
 
 Official train and test split. The example bank excludes every company that appears in the test set. Learned keywords and the per-clause risk table never use the contracts being scored (`evals/risk_table.json` is frozen). The test run needs `CONFIRM_TEST=yes` and was run once: do not re-run it to tune. Details: [`docs/evaluation-protocol.md`](docs/evaluation-protocol.md).
@@ -127,7 +144,7 @@ Official train and test split. The example bank excludes every company that appe
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | Components, data model, data flow, operations |
 | [`docs/evaluation-protocol.md`](docs/evaluation-protocol.md) | Splits, leakage rules, metric definitions, what is and is not measured |
-| [`docs/adr/`](docs/adr/README.md) | Seven decision records: what was chosen, why, and what it costs |
+| [`docs/adr/`](docs/adr/README.md) | Eight decision records: what was chosen, why, and what it costs |
 | [`notes/final_test_result.md`](notes/final_test_result.md) | The final result, controls and frozen settings |
 | [`notes/`](notes/) | Design history: production design, routing, retrieval, earlier decisions |
 
@@ -157,11 +174,11 @@ docs/ notes/   current documentation; design history
 - **Labels are incomplete,** so some "false alarms" may be real clauses nobody marked.
 - **Long quotes can be cut** by the 800-token output limit (7 of 4,182 here, all queued).
 - **US commercial contracts only.** Other jurisdictions, languages and contract types are untested.
-- **Hosted model:** prompts go to the provider. CUAD is public; do not send confidential contracts to a provider you have not vetted.
+- **Hosted model:** prompts go to the provider. CUAD is public; do not send confidential contracts to a provider you have not vetted. Live uploads are also stored in your Postgres until deleted.
 
 ## Roadmap
 
-Next: error analysis on the accepted-but-wrong answers, a different model for the second judge, comparing runs over time, and live extraction through a job queue.
+Next: error analysis on the accepted-but-wrong answers, a different model for the second judge, comparing runs over time, and a hosted live review with sign-in (the local one is built).
 
 ## License and citation
 

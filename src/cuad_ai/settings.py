@@ -10,6 +10,7 @@ import os
 
 # ---- pipeline rules ----
 HEADER_CLAUSES = frozenset({"Document Name", "Parties", "Agreement Date", "Effective Date"})
+RETRIEVE_K = 10  # excerpts shown to the model per question (the setting of the final test run)
 HEADER_CHUNKS = 4  # these clauses are found in the first chunks of a contract
 RRF_K = 60  # reciprocal rank fusion constant
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"

@@ -1,4 +1,4 @@
-.PHONY: help setup lint test check db-up db-down db-shell pipeline load-run
+.PHONY: help setup lint test check db-up db-down db-shell pipeline load-run worker live
 
 help:  ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /  /'
@@ -25,6 +25,12 @@ db-shell:  ## Open psql inside the container
 
 pipeline:  ## Run extract, route, review and decide (see README for the settings)
 	python -m cuad_ai pipeline
+
+worker:  ## Run the live-review worker (processes uploaded contracts)
+	python -m cuad_ai worker
+
+live:  ## Open the live-review page (needs the worker running)
+	streamlit run app/live_app.py
 
 load-run:  ## Store the committed final test run in Postgres (python scripts/load_run.py <folder> for another)
 	python scripts/load_run.py

@@ -11,5 +11,6 @@ Short records of the choices that shape the system: what was decided, why, what 
 | [0005](0005-two-judges-must-agree.md) | Two judges review doubtful answers; a split goes to a person |
 | [0006](0006-postgres-as-the-single-store.md) | Keep data, vectors, full text and run history in one Postgres |
 | [0007](0007-score-the-test-set-once.md) | Score the official test set once, behind a lock, with frozen settings |
+| [0008](0008-live-review-reuses-the-pipeline.md) | Run the same pipeline on uploads, in separate tables, behind a queue |
 
 Each record has a status. A record is replaced by a new one, never edited to hide a change of mind.

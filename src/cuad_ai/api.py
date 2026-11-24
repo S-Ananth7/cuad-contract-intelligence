@@ -10,6 +10,7 @@ from contextlib import contextmanager
 import psycopg
 from psycopg.rows import dict_row
 
+from cuad_ai.live import config as live_config
 from cuad_ai.monitor import prometheus_text, run_metrics
 from cuad_ai.runstore import run_scores
 from cuad_ai.settings import database_url, env_int, env_text
@@ -21,8 +22,11 @@ def default_connect():
         yield conn
 
 
-def create_app(connect=default_connect):
-    """Build the app. `connect` gives a database connection; tests pass their own."""
+def create_app(connect=default_connect, live=None):
+    """Build the app. `connect` gives a database connection; tests pass their own.
+
+    The live-review endpoints (uploads that spend model tokens) are added only when `live` is true, which by
+    default means LIVE_API_KEY is set."""
     from fastapi import FastAPI, HTTPException, Query
     from fastapi.responses import PlainTextResponse
 
@@ -72,6 +76,11 @@ def create_app(connect=default_connect):
         with connect() as conn:
             latest = conn.execute("SELECT run_id FROM runs ORDER BY run_id DESC LIMIT 1").fetchone()
             return "" if latest is None else prometheus_text(latest[0], run_metrics(conn, latest[0]))
+
+    if live if live is not None else live_config.enabled():
+        from cuad_ai.live.api import add_live_routes
+
+        add_live_routes(app, connect)
 
     return app
 

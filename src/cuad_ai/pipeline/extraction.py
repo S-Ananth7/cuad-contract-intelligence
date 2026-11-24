@@ -41,6 +41,23 @@ def needs_retry(row):
     return bool(row["error"]) or (bool(row["found"]) and row["quotes_real"] is False)
 
 
+def extract_with_retry(context, prompt, call):
+    """Ask once; if the reply cannot be used, ask once more with RETRY_NOTE. Adds 'retried' and 'unsolved'.
+    The live review uses this same function, so a saved run and a live run retry identically."""
+    row = extract_clause(context, prompt, call=call)
+    row["retried"], row["unsolved"] = False, False
+    if needs_retry(row):
+        again = extract_clause(context, prompt + RETRY_NOTE, call=call)
+        spent_in = row["tokens_in"] + again["tokens_in"]
+        spent_out = row["tokens_out"] + again["tokens_out"]
+        solved = not needs_retry(again)
+        if solved:
+            row = again
+        row["retried"], row["unsolved"] = True, not solved
+        row["tokens_in"], row["tokens_out"] = spent_in, spent_out
+    return row
+
+
 def official_test_titles():
     data = json.loads(Path("data/test.json").read_text(encoding="utf-8"))["data"]
     return {contract["title"] for contract in data}
@@ -101,17 +118,7 @@ def main(argv=None):
 
                     gold = get_gold_quotes(contract, clause)
                     prompt = make_clause_prompt(template, clause, questions[clause])
-                    row = extract_clause(context, prompt, call=call)
-                    row["retried"], row["unsolved"] = False, False
-                    if needs_retry(row):
-                        again = extract_clause(context, prompt + RETRY_NOTE, call=call)
-                        spent_in = row["tokens_in"] + again["tokens_in"]
-                        spent_out = row["tokens_out"] + again["tokens_out"]
-                        solved = not needs_retry(again)
-                        if solved:
-                            row = again
-                        row["retried"], row["unsolved"] = True, not solved
-                        row["tokens_in"], row["tokens_out"] = spent_in, spent_out
+                    row = extract_with_retry(context, prompt, call)
                     row["title"], row["clause"] = title, clause
                     row["gold_found"] = len(gold) > 0
                     row["quote_match"] = quotes_overlap(row["quotes"], gold)

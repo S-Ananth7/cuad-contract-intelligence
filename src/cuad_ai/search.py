@@ -28,12 +28,17 @@ def search_by_examples(conn, contract_id, clause_id, k=10):
     ).fetchall()
 
 
+def term_query(terms):
+    """The text-search query for a clause's learned stems, or None when there is nothing to search for."""
+    words = [t for t in terms if t.isalpha()]  # hyphenated stems are covered by their parts
+    return " | ".join(words) if words else None
+
+
 def search_by_terms(conn, contract_id, terms, k=50):
     """Top k chunks of one contract that contain any of the clause's learned word stems."""
-    words = [t for t in terms if t.isalpha()]  # hyphenated stems are covered by their parts
-    if not words:
+    query = term_query(terms)
+    if query is None:
         return []
-    query = " | ".join(words)
     return conn.execute(
         "SELECT start_char, end_char, ts_rank_cd(tsv, to_tsquery('simple', %s)) AS score "
         "FROM chunks WHERE contract_id = %s AND tsv @@ to_tsquery('simple', %s) "
@@ -42,14 +47,17 @@ def search_by_terms(conn, contract_id, terms, k=50):
     ).fetchall()
 
 
-def search_hybrid(conn, contract_id, clause_id, terms, k=10, pool=50):
-    """Merge example search and keyword search with reciprocal rank fusion."""
+def fuse(rankings, k=10):
+    """Reciprocal rank fusion: merge ranked lists of (start, end, score) into the best k (start, end, fused score)."""
     scores = {}
-    for ranked in (
-        search_by_examples(conn, contract_id, clause_id, pool),
-        search_by_terms(conn, contract_id, terms, pool),
-    ):
+    for ranked in rankings:
         for rank, (start, end, _) in enumerate(ranked, start=1):
             scores[(start, end)] = scores.get((start, end), 0) + 1 / (RRF_K + rank)
     best = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:k]
     return [(start, end, score) for (start, end), score in best]
+
+
+def search_hybrid(conn, contract_id, clause_id, terms, k=10, pool=50):
+    """Merge example search and keyword search with reciprocal rank fusion."""
+    return fuse((search_by_examples(conn, contract_id, clause_id, pool),
+                 search_by_terms(conn, contract_id, terms, pool)), k)

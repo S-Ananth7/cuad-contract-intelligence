@@ -6,6 +6,7 @@ you control the keys.
 """
 from __future__ import annotations
 
+import html
 import os
 
 import pandas as pd
@@ -16,24 +17,21 @@ from dotenv import load_dotenv
 from cuad_ai.live import config, store, tenants
 from live_data import export_csv, final_status, highlight_html, plain_reason, summary
 
-NAVY = "#1F4E79"
-TINT = {"Accepted": "#E6F4EA", "Confirmed by reviewer": "#E6F4EA", "Rejected": "#FCE8E6",
-        "Rejected by reviewer": "#FCE8E6", "Needs review": "#FFF4E0", "Not found": "#F1F3F4"}
-CARD = {"Accepted": "#1E7B34", "Needs review": "#B26A00", "Rejected": "#B3261E", "Not found": "#5F6368"}
+# One neutral palette (the app theme). The only status that asks for action, "Needs review", gets a quiet tint.
+ACTION_FILL = "#EAF0F7"
 
 load_dotenv()
 try:  # the hosted wrapper has already set this
-    st.set_page_config(page_title="Contract clause review", page_icon="📄", layout="wide")
+    st.set_page_config(page_title="Contract clause review", layout="wide")
 except st.errors.StreamlitAPIException:
     pass
-st.markdown(f"""<style>
-.block-container{{padding-top:1.6rem;max-width:1250px;}} footer{{visibility:hidden;}}
-.legend{{font-size:.88rem;color:#374151;line-height:1.7}} .dot{{display:inline-block;width:.7rem;height:.7rem;border-radius:50%;margin-right:.4rem}}
-.doc{{white-space:pre-wrap;font-family:Georgia,serif;font-size:.92rem;line-height:1.55;max-height:460px;overflow:auto;
- border:1px solid #E3E7EB;border-radius:8px;padding:1rem 1.2rem;background:#FCFCFD;color:#1B2430}}
-mark{{background:#FFE08A;padding:0 2px;border-radius:2px}}
-.badge{{display:inline-block;padding:.15rem .6rem;border-radius:999px;font-size:.8rem;font-weight:600;color:#1B2430}}
-h1{{color:{NAVY};}}
+st.markdown("""<style>
+.block-container{padding-top:2rem;max-width:1200px;} footer{visibility:hidden;}
+.doc{white-space:pre-wrap;font-family:Georgia,serif;font-size:.92rem;line-height:1.6;max-height:460px;overflow:auto;
+ border:1px solid #D5DAE1;border-radius:4px;padding:1rem 1.2rem;background:#FFFFFF}
+mark{background:#FFF1B8;padding:0 2px}
+.badge{display:inline-block;padding:.1rem .55rem;border:1px solid #AEB7C4;border-radius:4px;font-size:.8rem;font-weight:600}
+.account{text-align:right;font-weight:600;padding-top:.6rem} .account span{font-weight:400;font-size:.85rem;opacity:.75}
 </style>""", unsafe_allow_html=True)
 
 
@@ -70,26 +68,40 @@ if client is None:
     st.stop()
 cap = client["daily_cap"] if client["daily_cap"] is not None else config.daily_cap()
 
-st.title("Contract clause review")
-st.markdown("Upload a contract. The system looks for **41 kinds of clauses**, quotes the exact words for each, "
-            "and checks that every quote really appears in your contract. Doubtful answers come to you to confirm or reject.")
+head, who = st.columns([3, 2])
+head.title("Contract clause review")
+head.caption("Clause extraction with quoted evidence and a human review step.")
+who.markdown(f"<div class='account'>{html.escape(client['name'])}<br>"
+             f"<span>{html.escape(email or 'Local session')}</span></div>", unsafe_allow_html=True)
+
+
+def welcome() -> None:
+    with st.container(border=True):
+        st.subheader(f"Welcome, {client['name']}")
+        st.write("This workspace reads a contract, finds 41 kinds of clauses and quotes the exact words behind each "
+                 "answer. Every quote is checked against your document, and anything doubtful is left for you to "
+                 "confirm or reject.")
+        one, two, three = st.columns(3)
+        one.markdown("**1. Upload**  \nAdd a plain-text (.txt) contract in the sidebar.")
+        two.markdown("**2. Wait**  \nA review takes a few minutes. You can leave this page open.")
+        three.markdown("**3. Review**  \nStart with Needs review, then skim the accepted answers.")
+        st.caption(f"Contracts are visible only to {client['name']}. They are deleted automatically after "
+                   f"{client['retention_days']} days, or sooner if you delete them.")
+
 
 with st.expander("How to read the results", expanded=False):
     st.markdown(
-        '<div class="legend">'
-        f'<span class="dot" style="background:{CARD["Accepted"]}"></span><b>Accepted</b>: the checks passed. '
-        "This is not a guarantee: on the 102 CUAD test contracts about 3 in 4 accepted answers were right, so skim them too.<br>"
-        f'<span class="dot" style="background:{CARD["Needs review"]}"></span><b>Needs review</b>: the two checkers disagreed. '
-        "This is where your decision matters most.<br>"
-        f'<span class="dot" style="background:{CARD["Rejected"]}"></span><b>Rejected</b>: both checkers said the quote is not that clause.<br>'
-        f'<span class="dot" style="background:{CARD["Not found"]}"></span><b>Not found</b>: no matching text in the contract.<br><br>'
-        "Your confirm or reject is saved next to the machine's decision and never replaces it."
-        "</div>", unsafe_allow_html=True)
+        "- **Accepted**: the automatic checks passed. This is not a guarantee: on the 102 CUAD test contracts "
+        "about 3 in 4 accepted answers were right, so skim them too.\n"
+        "- **Needs review**: the two checkers disagreed. This is where your decision matters most.\n"
+        "- **Rejected**: both checkers said the quote is not that clause.\n"
+        "- **Not found**: no matching text in the contract.\n\n"
+        "Your confirm or reject is saved next to the machine's decision and never replaces it.")
 
 with st.sidebar:
-    st.header("Your review")
+    st.subheader("Account")
     if email:
-        st.caption(f"Signed in as **{email}**. Your decisions are saved under this address.")
+        st.caption(f"Signed in as {email}. Your decisions are saved under this address.")
     else:
         st.text_input("Your name", key="reviewer", help="Saved with each decision you make.")
     st.divider()
@@ -110,7 +122,7 @@ with st.sidebar:
 with connect() as conn:
     submissions = store.list_submissions(conn, tenant, 30)
 if not submissions:
-    st.info("No contracts yet. Add a .txt contract in the sidebar and it will appear here.")
+    welcome()
     st.stop()
 
 ids = [s["id"] for s in submissions]
@@ -131,7 +143,7 @@ def cards(counts: dict) -> None:
 
 
 def color_status(value: str) -> str:
-    return f"background-color: {TINT[value]}; color: #1B2430"
+    return f"background-color: {ACTION_FILL}; font-weight: 600" if value == "Needs review" else ""
 
 
 @st.fragment(run_every=3 if active else None)
@@ -199,7 +211,7 @@ def show(submission_id: int):
     with right:
         status = final_status(a)
         st.markdown(f"### {a['clause']}")
-        st.markdown(f"<span class='badge' style='background:{TINT[status]}'>{status}</span>", unsafe_allow_html=True)
+        st.markdown(f"<span class='badge'>{status}</span>", unsafe_allow_html=True)
         st.write(plain_reason(a["reason"]) or "No quote to check.")
         if a["verdict"] is not None or a["verdict2"] is not None:
             word = {True: "yes", False: "no", None: "no answer"}

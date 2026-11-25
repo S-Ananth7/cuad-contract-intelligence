@@ -30,7 +30,7 @@ from cuad_ai.live.signin import tenant_ids, verified_email  # noqa: E402
 
 IDLE_SECONDS = 30 * 60
 
-st.set_page_config(page_title="Contract clause review", page_icon="📄", layout="wide")
+st.set_page_config(page_title="Contract clause review", layout="wide")
 
 try:  # copy the app's secrets into the environment on every run, so a saved change is picked up without a reboot
     for key, value in st.secrets.items():
@@ -82,20 +82,30 @@ def background_worker():
     return state
 
 
+def card():
+    """A centred card for the sign-in and no-access screens."""
+    _, middle, _ = st.columns([1, 2, 1])
+    return middle.container(border=True)
+
+
 def sign_in_screen():
-    st.title("Contract clause review")
-    st.write("Sign in with the account your administrator added. Each client sees only its own contracts.")
-    try:
-        configured = "auth" in st.secrets
-    except Exception:
-        configured = False
-    if not configured:
-        st.error("Sign-in is not set up on this deployment (the [auth] secrets are missing), so the page stays closed.")
-        return
-    providers = [p.strip() for p in os.environ.get("LIVE_SIGNIN_PROVIDERS", "google,microsoft").split(",") if p.strip()]
-    for provider, column in zip(providers, st.columns(len(providers))):
-        if column.button(f"Sign in with {provider.replace('_', ' ').title()}", key=f"login-{provider}", width="stretch"):
-            st.login(provider)
+    with card():
+        st.title("Contract clause review")
+        st.caption("Clause extraction with quoted evidence and a human review step.")
+        st.write("Sign in with the account your administrator added. Each client sees only its own contracts.")
+        try:
+            configured = "auth" in st.secrets
+        except Exception:
+            configured = False
+        if not configured:
+            st.error("Sign-in is not set up on this deployment (the [auth] secrets are missing), so the page stays closed.")
+            return
+        providers = [p.strip() for p in os.environ.get("LIVE_SIGNIN_PROVIDERS", "google,microsoft").split(",")
+                     if p.strip()]
+        for provider in providers:
+            if st.button(f"Sign in with {provider.replace('_', ' ').title()}", key=f"login-{provider}",
+                         width="stretch"):
+                st.login(provider)
 
 
 def allowed_client(email):
@@ -129,10 +139,11 @@ tenant = allowed_client(email)
 if tenant is None:
     for key in ("tenant", "email", "login_logged"):
         st.session_state.pop(key, None)
-    st.title("Contract clause review")
-    st.error("This account has not been given access. Ask your administrator to add your email address, "
-             "then sign out and sign in again.")
-    st.button("Sign out", on_click=st.logout)
+    with card():
+        st.title("Contract clause review")
+        st.error("This account has not been given access. Ask your administrator to add your email address, "
+                 "then sign out and sign in again.")
+        st.button("Sign out", on_click=st.logout)
     st.stop()
 st.session_state["tenant"], st.session_state["email"] = tenant, email
 st.sidebar.button("Sign out", on_click=st.logout)

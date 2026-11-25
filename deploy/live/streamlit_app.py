@@ -30,43 +30,53 @@ IDLE_SECONDS = 30 * 60
 
 st.set_page_config(page_title="Contract clause review", page_icon="📄", layout="wide")
 
-try:  # Streamlit Cloud also exposes top-level secrets as environment variables; this covers the other cases
+try:  # copy the app's secrets into the environment on every run, so a saved change is picked up without a reboot
     for key, value in st.secrets.items():
         if isinstance(value, str):
-            os.environ.setdefault(key, value)
+            os.environ[key] = value
 except Exception:  # no secrets file: running locally with .env instead
     pass
+
+RETRY_SECONDS = 30  # a stopped worker is started again after this long
+
+
+def run_worker(state):
+    """The worker thread: runs until the server stops. If it cannot start, it records why and ends."""
+    state["error"] = None
+    try:
+        import psycopg
+
+        from cuad_ai.embed import load_model
+        from cuad_ai.live import store
+        from cuad_ai.live.process import LockedEmbedder
+        from cuad_ai.live.worker import make_bank_cache, run_loop
+        from cuad_ai.llm import call_model
+
+        url = os.environ["DATABASE_URL"]
+
+        def connect():
+            return psycopg.connect(url, connect_timeout=10)
+
+        with connect() as conn:
+            store.ensure_schema(conn)
+        embedder = LockedEmbedder(load_model())
+        run_loop(connect, call_model, embedder, make_bank_cache(connect),
+                 should_poll=lambda: time.time() - state["last_seen"] < IDLE_SECONDS)
+    except Exception as error:  # shown on the page; the page starts a new thread after RETRY_SECONDS
+        state["error"] = f"{type(error).__name__}: {error}"[:300]
+    state["stopped_at"] = time.time()
+
+
+def start_thread(state):
+    state["thread"] = threading.Thread(target=run_worker, args=(state,), name="live-worker", daemon=True)
+    state["thread"].start()
 
 
 @st.cache_resource
 def background_worker():
-    """Start the worker thread once per server process. Returns a dict the page updates and the thread reads."""
-    state = {"last_seen": time.time(), "error": None}
-
-    def run():
-        try:
-            import psycopg
-
-            from cuad_ai.embed import load_model
-            from cuad_ai.live import store
-            from cuad_ai.live.process import LockedEmbedder
-            from cuad_ai.live.worker import make_bank_cache, run_loop
-            from cuad_ai.llm import call_model
-
-            url = os.environ["DATABASE_URL"]
-
-            def connect():
-                return psycopg.connect(url, connect_timeout=10)
-
-            with connect() as conn:
-                store.ensure_schema(conn)
-            embedder = LockedEmbedder(load_model())
-            run_loop(connect, call_model, embedder, make_bank_cache(connect),
-                     should_poll=lambda: time.time() - state["last_seen"] < IDLE_SECONDS)
-        except Exception as error:  # shown on the page; the thread ends and a reboot restarts it
-            state["error"] = f"{type(error).__name__}: {error}"[:300]
-
-    threading.Thread(target=run, name="live-worker", daemon=True).start()
+    """The worker's shared state, created once per server process. The page updates it, the thread reads it."""
+    state = {"last_seen": time.time(), "error": None, "stopped_at": 0.0, "thread": None}
+    start_thread(state)
     return state
 
 
@@ -90,7 +100,10 @@ if not st.session_state.get("granted"):
 
 worker = background_worker()
 worker["last_seen"] = time.time()
+if not worker["thread"].is_alive() and time.time() - worker["stopped_at"] > RETRY_SECONDS:
+    start_thread(worker)  # it stopped (for example a wrong secret that has since been fixed): try again
 if worker["error"]:
-    st.warning(f"The background worker stopped, so uploads will not be processed: {worker['error']}")
+    st.warning(f"The background worker is not running, so uploads will not be processed yet: {worker['error']}. "
+               f"It retries by itself every {RETRY_SECONDS} seconds after you fix the setting; reload the page.")
 
 runpy.run_path(str(ROOT / "app" / "live_app.py"), run_name="__main__")

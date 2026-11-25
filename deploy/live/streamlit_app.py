@@ -83,24 +83,34 @@ def background_worker():
 
 
 SCREEN_CSS = """<style>
-.block-container{max-width:480px;padding-top:18vh;} footer{visibility:hidden;}
+.block-container{max-width:940px;padding-top:14vh;} footer{visibility:hidden;}
 [data-testid="stHeader"],[data-testid="stToolbar"]{display:none;}
-.screen-name{font-size:1.5rem;font-weight:700;line-height:1.25;margin-bottom:.2rem}
+.brand{background:linear-gradient(145deg,#EEF4FB 0%,#D2E3F5 100%);color:#17304F;border-radius:6px;
+ padding:2.2rem 2rem;min-height:340px}
+.brand .name{font-size:1.6rem;font-weight:700;line-height:1.25;margin-bottom:.8rem}
+.brand .desc{line-height:1.6;margin-bottom:1.6rem;max-width:30ch}
+.brand .point{border-left:3px solid #1F4E79;padding-left:.7rem;margin-bottom:.7rem;font-weight:600;font-size:.95rem}
+.screen-title{font-size:1.5rem;font-weight:700;margin:3.2rem 0 .2rem}
 .screen-hint{opacity:.7;margin-bottom:1.4rem}
 </style>"""
+BRAND = """<div class="brand"><div class="name">Contract clause review</div>
+<div class="desc">Upload a contract and get the key clauses back with the exact wording quoted from your document, ready for a person to confirm.</div>
+<div class="point">Clause extraction</div><div class="point">Quoted evidence</div>
+<div class="point">Human review</div></div>"""
 
 
-def shell(hint):
-    """A small centred card for the sign-in and no-access screens: the product name, one line, then the content."""
+def shell(title, hint):
+    """A single card for the sign-in and no-access screens: a light panel on the left, the form on the right."""
     st.markdown(SCREEN_CSS, unsafe_allow_html=True)
-    card = st.container(border=True)
-    card.markdown(f"<div class='screen-name'>Contract clause review</div><div class='screen-hint'>{hint}</div>",
-                  unsafe_allow_html=True)
-    return card
+    left, right = st.container(border=True).columns([1.1, 1], gap="large")
+    left.markdown(BRAND, unsafe_allow_html=True)
+    right.markdown(f"<div class='screen-title'>{title}</div><div class='screen-hint'>{hint}</div>",
+                   unsafe_allow_html=True)
+    return right
 
 
 def sign_in_screen():
-    with shell("Sign in to continue."):
+    with shell("Sign in", "Sign in to continue."):
         try:
             configured = "auth" in st.secrets
         except Exception:
@@ -147,7 +157,7 @@ tenant = allowed_client(email)
 if tenant is None:
     for key in ("tenant", "email", "login_logged"):
         st.session_state.pop(key, None)
-    with shell("This account does not have access."):
+    with shell("No access", "This account does not have access."):
         st.button("Sign out", on_click=st.logout, width="stretch")
     st.stop()
 st.session_state["tenant"], st.session_state["email"] = tenant, email

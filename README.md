@@ -3,6 +3,7 @@
 [![CI](https://github.com/S-Ananth7/cuad-contract-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/S-Ananth7/cuad-contract-intelligence/actions/workflows/ci.yml)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License MIT](https://img.shields.io/badge/license-MIT-green)
+[![Live demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://cuad-contract-intelligence.streamlit.app/)
 
 **Finds 41 types of clauses in commercial contracts, quotes the exact sentence, proves the quote exists word for word, and sends only the doubtful cases to a person.**
 
@@ -13,6 +14,15 @@ Built and scored on the lawyer-annotated [CUAD v1](https://www.atticusprojectai.
 | **Cost** | Retrieves 10 relevant excerpts per question instead of sending the whole contract: about 81% fewer input tokens |
 | **Invented quotes** | Every quote is checked against the contract by plain code, retried once, then queued: 3 invented quotes in the test run, none accepted |
 | **Knowing what to trust** | A gate and two judges decide accept, reject or queue, so a person reads about 1.8 answers per contract, not all of them |
+
+## Try it
+
+| | What it is | Where |
+|---|---|---|
+| **Results demo** | Read-only view of the saved test run: scores, every decision, the evidence next to the lawyers' passages, and the review queue. No setup. | [cuad-contract-intelligence.streamlit.app](https://cuad-contract-intelligence.streamlit.app/) |
+| **Live review** | Upload your own contract, watch the pipeline run, see each quote highlighted in your text, and confirm or reject each answer. | [Run it locally](#live-review) or [host it for a client](docs/deploy-live.md) |
+
+**Contents:** [Results](#results) · [How it works](#how-it-works) · [Quick start](#quick-start) · [Usage](#usage) · [Live review](#live-review) · [Keeping the result honest](#keeping-the-result-honest) · [Documentation](#documentation) · [Development](#development) · [Limitations](#limitations) · [Roadmap](#roadmap)
 
 ## Results
 
@@ -66,7 +76,7 @@ Requires Python 3.10 or newer and Docker.
 # 1. Install
 python -m venv venv
 .\venv\Scripts\Activate.ps1          # Linux/macOS: source venv/bin/activate
-pip install -e ".[dev,api]"
+pip install -e ".[dev,api,demo]"
 
 # 2. Configure: copy the template, then fill in LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, DATABASE_URL, POSTGRES_PASSWORD
 Copy-Item .env.example .env          # Linux/macOS: cp .env.example .env
@@ -87,6 +97,8 @@ python scripts/embed_highlights.py
 $env:SET="validation"; $env:LIMIT="5"; $env:K="10"
 python -m cuad_ai pipeline
 ```
+
+To open the results demo on your machine: `python -m streamlit run app/streamlit_app.py`.
 
 The data is not in this repository: download CUAD v1 and put `CUADv1.json` and `test.json` in `data/`. Never commit `.env`.
 
@@ -120,21 +132,25 @@ Monitoring numbers need no lawyer labels: share accepted, rejected and queued, q
 
 ## Live review
 
-Upload a contract, watch the pipeline run on it, and confirm or reject each answer. It uses the same retrieval, quote check, gate, two judges and decision code as the saved run ([ADR 0008](docs/adr/0008-live-review-reuses-the-pipeline.md)); uploads live in their own tables and never touch the example bank.
+Upload a contract, watch the pipeline run on it, and confirm or reject each answer. It uses the same retrieval, quote check, gate, two judges and decision code as the saved run ([ADR 0008](docs/adr/0008-live-review-reuses-the-pipeline.md)). Uploads live in their own tables and never touch the example bank. If a file name starts with a CUAD company, that company's lawyer examples are left out, as they were for the test contracts.
+
+**What the page shows:** a summary (accepted, needs review, rejected, not found), a color-coded table with the reason for each decision in plain words, the contract with the quote highlighted, both judges' verdicts, and Confirm / Reject buttons. A person's decision is stored next to the machine's, never over it. Results export to CSV, and each upload can be deleted with everything derived from it.
+
+**Run it locally** (needs Postgres and the model settings from the quick start):
 
 ```powershell
-docker compose up -d db                       # a database created before this feature needs: psql ... -f sql/live.sql (the page and the worker also apply it)
-python -m cuad_ai worker                      # terminal 1: runs queued uploads (uses LLM_* from .env)
-streamlit run app/live_app.py                 # terminal 2: upload, inspect, confirm or reject
+docker compose up -d db                       # an older database gets the new tables automatically on first start of the page or worker
+python -m cuad_ai worker                      # terminal 1: processes queued uploads (uses LLM_* from .env)
+python -m streamlit run app/live_app.py       # terminal 2: upload, inspect, confirm or reject
 ```
 
-The page shows each answer with its quote highlighted in your contract, both judges' verdicts, and Confirm / Reject buttons that record your name and an optional note beside the machine's decision. Results export to CSV. Limits: 400,000 characters per file, 20 uploads per day, 400,000 tokens per upload (`LIVE_MAX_CHARS`, `LIVE_DAILY_CAP`, `LIVE_TOKEN_CAP`).
+**Host it for a client** (Streamlit Community Cloud, a hosted Postgres, one shared access code, your model key with a daily cap): follow [`docs/deploy-live.md`](docs/deploy-live.md) and [ADR 0009](docs/adr/0009-hosted-live-review.md). The hosted page has its own entry file, `deploy/live/streamlit_app.py`, so the public demo stays read-only.
 
-To use it from code, set `LIVE_API_KEY` and start `python -m cuad_ai serve`; the endpoints (`POST /submissions`, `GET /submissions/{id}`, `PUT /submissions/{id}/answers/{answer}/review`, `DELETE /submissions/{id}`) then appear in `/docs` and need an `X-API-Key` header.
+**Limits** (environment variables): `LIVE_MAX_CHARS` 400,000 characters per file, `LIVE_DAILY_CAP` 20 uploads per day, `LIVE_TOKEN_CAP` 400,000 tokens per upload. Plain text only.
 
-To host it for a client (hosted Postgres, Streamlit Cloud, access code), follow [`docs/deploy-live.md`](docs/deploy-live.md).
+**From code:** set `LIVE_API_KEY` and start `python -m cuad_ai serve`. The endpoints `POST /submissions`, `GET /submissions/{id}`, `PUT /submissions/{id}/answers/{answer}/review` and `DELETE /submissions/{id}` then appear in `/docs` and need an `X-API-Key` header.
 
-The 0.757 / 0.916 scores belong to the 102 CUAD test contracts. They do not describe how the system does on your contract.
+> The 0.757 / 0.916 scores belong to the 102 CUAD test contracts. They do not describe how the system does on your contract. Skim accepted answers too: they are right about three times in four, not always.
 
 ## Keeping the result honest
 
@@ -161,7 +177,9 @@ Database tests skip when no database is reachable, so the suite runs on a fresh 
 
 ```
 src/cuad_ai/   package: ingestion, search, extraction, validation, metrics, run storage, monitoring, API;
-               pipeline/ holds the stages, cli.py the single command
+               pipeline/ holds the stages, live/ the upload review, cli.py the single command
+app/           Streamlit pages: streamlit_app.py (results demo), live_app.py (live review)
+deploy/live/   entry file, requirements and secrets template for the hosted live review
 scripts/       data loaders, embedding jobs, run loader, analysis helpers
 evals/         frozen risk table, split files, committed final-test evidence; run output is git-ignored
 prompts/       extraction and judge prompts          sql/ docker/   schema, run tables, database init
@@ -171,7 +189,7 @@ docs/ notes/   current documentation; design history
 
 ## Limitations
 
-- **Judges share a model,** so they can make the same mistake; the queue only catches disagreement.
+- **Judges share a model,** so they can make the same mistake; the queue only catches disagreement. An informal check on one new, synthetic contract showed it: about 19 of 22 accepted answers were right, and the two clearly wrong ones had passed both judges. One contract is an anecdote, not a measurement.
 - **Retrieval caps recall:** about 7% of lawyer-marked passages are not in the top 10 excerpts.
 - **Labels are incomplete,** so some "false alarms" may be real clauses nobody marked.
 - **Long quotes can be cut** by the 800-token output limit (7 of 4,182 here, all queued).
@@ -180,7 +198,7 @@ docs/ notes/   current documentation; design history
 
 ## Roadmap
 
-Next: error analysis on the accepted-but-wrong answers, a different model for the second judge, comparing runs over time, and a hosted live review with sign-in (the local one is built).
+Next: error analysis on the accepted-but-wrong answers, a different model for the second judge (measured on validation contracts only), comparing runs over time, and per-person sign-in for the hosted live review.
 
 ## License and citation
 

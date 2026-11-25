@@ -82,17 +82,33 @@ def background_worker():
     return state
 
 
-def card():
-    """A centred card for the sign-in and no-access screens."""
-    _, middle, _ = st.columns([1, 2, 1])
-    return middle.container(border=True)
+SCREEN_CSS = """<style>
+.block-container{max-width:1100px;padding-top:3rem;} footer{visibility:hidden;}
+.brand{background:#1F4E79;color:#FFFFFF;padding:2.6rem 2.4rem;border-radius:6px;min-height:430px}
+.brand .name{font-size:1.9rem;font-weight:700;line-height:1.2;margin-bottom:.4rem}
+.brand .sub{opacity:.8;margin-bottom:2rem}
+.brand ul{padding-left:1.1rem;margin:0} .brand li{margin-bottom:1rem;line-height:1.5}
+</style>"""
+BRAND = """<div class="brand"><div class="name">Contract clause review</div>
+<div class="sub">Clause extraction with quoted evidence and a human review step.</div>
+<ul><li>Every answer quotes the exact words from your contract.</li>
+<li>Doubtful answers wait for a person to confirm or reject them.</li>
+<li>Your contracts are visible only to your organisation.</li></ul></div>"""
+
+
+def shell():
+    """The sign-in layout: a brand panel on the left and the form on the right (stacked on a phone)."""
+    st.markdown(SCREEN_CSS, unsafe_allow_html=True)
+    left, right = st.columns(2, gap="large")
+    left.markdown(BRAND, unsafe_allow_html=True)
+    return right.container()
 
 
 def sign_in_screen():
-    with card():
-        st.title("Contract clause review")
-        st.caption("Clause extraction with quoted evidence and a human review step.")
-        st.write("Sign in with the account your administrator added. Each client sees only its own contracts.")
+    with shell():
+        st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
+        st.subheader("Sign in")
+        st.write("Use the account your administrator added.")
         try:
             configured = "auth" in st.secrets
         except Exception:
@@ -106,6 +122,9 @@ def sign_in_screen():
             if st.button(f"Sign in with {provider.replace('_', ' ').title()}", key=f"login-{provider}",
                          width="stretch"):
                 st.login(provider)
+        st.divider()
+        st.caption("Your contracts are private to your organisation and deleted automatically. "
+                   "Need access? Contact your administrator.")
 
 
 def allowed_client(email):
@@ -139,8 +158,9 @@ tenant = allowed_client(email)
 if tenant is None:
     for key in ("tenant", "email", "login_logged"):
         st.session_state.pop(key, None)
-    with card():
-        st.title("Contract clause review")
+    with shell():
+        st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
+        st.subheader("No access")
         st.error("This account has not been given access. Ask your administrator to add your email address, "
                  "then sign out and sign in again.")
         st.button("Sign out", on_click=st.logout)

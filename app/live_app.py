@@ -89,14 +89,6 @@ def welcome() -> None:
                    f"{client['retention_days']} days, or sooner if you delete them.")
 
 
-with st.expander("How to read the results", expanded=False):
-    st.markdown(
-        "- **Accepted**: the automatic checks passed. This is not a guarantee: on the 102 CUAD test contracts "
-        "about 3 in 4 accepted answers were right, so skim them too.\n"
-        "- **Needs review**: the two checkers disagreed. This is where your decision matters most.\n"
-        "- **Rejected**: both checkers said the quote is not that clause.\n"
-        "- **Not found**: no matching text in the contract.\n\n"
-        "Your confirm or reject is saved next to the machine's decision and never replaces it.")
 
 with st.sidebar:
     st.subheader("Account")
@@ -124,6 +116,15 @@ with connect() as conn:
 if not submissions:
     welcome()
     st.stop()
+
+with st.expander("How to read the results", expanded=False):
+    st.markdown(
+        "- **Accepted**: the automatic checks passed. This is not a guarantee: on the 102 CUAD test contracts "
+        "about 3 in 4 accepted answers were right, so skim them too.\n"
+        "- **Needs review**: the two checkers disagreed. This is where your decision matters most.\n"
+        "- **Rejected**: both checkers said the quote is not that clause.\n"
+        "- **Not found**: no matching text in the contract.\n\n"
+        "Your confirm or reject is saved next to the machine's decision and never replaces it.")
 
 ids = [s["id"] for s in submissions]
 current = st.session_state.get("current", ids[0])

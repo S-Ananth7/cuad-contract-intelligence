@@ -4,11 +4,12 @@ The hosted page runs the same loop in a background thread (deploy/live/streamlit
 while someone is using the page, so an idle deployment does not keep the database awake.
 """
 import threading
+import time
 
 import psycopg
 
 from cuad_ai.embed import load_model
-from cuad_ai.live import store
+from cuad_ai.live import store, tenants
 from cuad_ai.live.process import LockedEmbedder, load_bank, process
 from cuad_ai.llm import call_model
 from cuad_ai.settings import database_url
@@ -31,13 +32,25 @@ def run_once(connect, call, embedder, bank_for):
     return sub["id"]
 
 
-def run_loop(connect, call, embedder, bank_for, should_poll=lambda: True, stop=None, poll_seconds=3.0):
-    """Keep taking uploads until `stop` (a threading.Event) is set. Asks the database only when should_poll() is true."""
+def run_loop(connect, call, embedder, bank_for, should_poll=lambda: True, stop=None, poll_seconds=3.0,
+             purge_seconds=6 * 3600):
+    """Keep taking uploads until `stop` (a threading.Event) is set. Asks the database only when should_poll() is true.
+
+    Each time it polls and the last clean-up was more than `purge_seconds` ago (the first poll counts), it also
+    deletes uploads older than their client's retention period, so the retention promise does not depend on someone
+    remembering to run `live-admin purge`.
+    """
     stop = stop or threading.Event()
+    last_purge = None
     while not stop.is_set():
         try:
-            if should_poll() and run_once(connect, call, embedder, bank_for) is not None:
-                continue  # more may be waiting: do not sleep
+            if should_poll():
+                if last_purge is None or time.monotonic() - last_purge >= purge_seconds:
+                    with connect() as conn:
+                        tenants.purge_expired(conn)
+                    last_purge = time.monotonic()
+                if run_once(connect, call, embedder, bank_for) is not None:
+                    continue  # more may be waiting: do not sleep
         except psycopg.Error:
             pass  # the database blinked (a hosted one wakes slowly); try again after the pause
         stop.wait(poll_seconds)

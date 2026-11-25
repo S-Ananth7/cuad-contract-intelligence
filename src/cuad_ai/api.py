@@ -26,7 +26,7 @@ def create_app(connect=default_connect, live=None):
     """Build the app. `connect` gives a database connection; tests pass their own.
 
     The live-review endpoints (uploads that spend model tokens) are added only when `live` is true, which by
-    default means LIVE_API_KEY is set."""
+    default means LIVE_API is switched on (each client then has its own API key)."""
     from fastapi import FastAPI, HTTPException, Query
     from fastapi.responses import PlainTextResponse
 

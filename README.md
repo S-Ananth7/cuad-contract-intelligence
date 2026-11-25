@@ -114,7 +114,8 @@ The data is not in this repository: download CUAD v1 and put `CUADv1.json` and `
 | `judge1`, `judge2` | The two judges (the second also sees lawyer examples) |
 | `finalize` | Accept, reject or queue every question; writes `final.json` and `queue.json` |
 | `freeze-risk` | Write `evals/risk_table.json` from validation runs |
-| `serve` | Start the API (read-only unless `LIVE_API_KEY` is set) |
+| `serve` | Start the API (read-only unless `LIVE_API=1`; see Live review) |
+| `live-admin` | Manage clients, who may sign in, API keys, the audit trail and expired uploads |
 | `worker` | Process uploaded contracts from the live-review queue |
 
 Runs land in `evals/runs/<run folder>/`. Identical model calls are cached in `evals/cache/` (set `NO_CACHE=1` to bypass).
@@ -144,11 +145,13 @@ python -m cuad_ai worker                      # terminal 1: processes queued upl
 python -m streamlit run app/live_app.py       # terminal 2: upload, inspect, confirm or reject
 ```
 
-**Host it for a client** (Streamlit Community Cloud, a hosted Postgres, one shared access code, your model key with a daily cap): follow [`docs/deploy-live.md`](docs/deploy-live.md) and [ADR 0009](docs/adr/0009-hosted-live-review.md). The hosted page has its own entry file, `deploy/live/streamlit_app.py`, so the public demo stays read-only.
+Run directly like this, the page uses one private client named `local` and asks for your name. Sign-in and separate clients belong to the hosted version.
 
-**Limits** (environment variables): `LIVE_MAX_CHARS` 400,000 characters per file, `LIVE_DAILY_CAP` 20 uploads per day, `LIVE_TOKEN_CAP` 400,000 tokens per upload. Plain text only.
+**Host it for clients** (Streamlit Community Cloud, a hosted Postgres, Google or Microsoft sign-in, your model key with daily caps): follow [`docs/deploy-live.md`](docs/deploy-live.md), [ADR 0009](docs/adr/0009-hosted-live-review.md) and [ADR 0010](docs/adr/0010-clients-sign-in-and-audit.md). Each client sees only its own contracts, only people on an allow-list can sign in, reviewer names are verified emails, and an audit trail records who did what. What is and is not protected is written down in [`docs/security.md`](docs/security.md). The hosted page has its own entry file, `deploy/live/streamlit_app.py`; the public demo stays read-only.
 
-**From code:** set `LIVE_API_KEY` and start `python -m cuad_ai serve`. The endpoints `POST /submissions`, `GET /submissions/{id}`, `PUT /submissions/{id}/answers/{answer}/review` and `DELETE /submissions/{id}` then appear in `/docs` and need an `X-API-Key` header.
+**Limits** (environment variables): `LIVE_MAX_CHARS` 400,000 characters per file, `LIVE_DAILY_CAP` 20 uploads per client per day, `LIVE_GLOBAL_DAILY_CAP` 100 across all clients, `LIVE_TOKEN_CAP` 400,000 tokens per upload, `LIVE_RETENTION_DAYS` 30 days before an upload is deleted (each client can have its own). Plain text only.
+
+**From code:** set `LIVE_API=1`, make a key for a client with `python -m cuad_ai live-admin key CLIENT`, and start `python -m cuad_ai serve`. The endpoints `POST /submissions`, `GET /submissions/{id}`, `PUT /submissions/{id}/answers/{answer}/review` and `DELETE /submissions/{id}` then appear in `/docs` and need that key in an `X-API-Key` header. A key reaches only its own client's uploads.
 
 > The 0.757 / 0.916 scores belong to the 102 CUAD test contracts. They do not describe how the system does on your contract. Skim accepted answers too: they are right about three times in four, not always.
 
@@ -162,7 +165,8 @@ Official train and test split. The example bank excludes every company that appe
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | Components, data model, data flow, operations |
 | [`docs/evaluation-protocol.md`](docs/evaluation-protocol.md) | Splits, leakage rules, metric definitions, what is and is not measured |
-| [`docs/adr/`](docs/adr/README.md) | Nine decision records: what was chosen, why, and what it costs |
+| [`docs/security.md`](docs/security.md) | Who can see what, how clients are separated, what is recorded and what is not covered |
+| [`docs/adr/`](docs/adr/README.md) | Ten decision records: what was chosen, why, and what it costs |
 | [`notes/final_test_result.md`](notes/final_test_result.md) | The final result, controls and frozen settings |
 | [`notes/`](notes/) | Design history: production design, routing, retrieval, earlier decisions |
 

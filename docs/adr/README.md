@@ -13,5 +13,6 @@ Short records of the choices that shape the system: what was decided, why, what 
 | [0007](0007-score-the-test-set-once.md) | Score the official test set once, behind a lock, with frozen settings |
 | [0008](0008-live-review-reuses-the-pipeline.md) | Run the same pipeline on uploads, in separate tables, behind a queue |
 | [0009](0009-hosted-live-review.md) | Host the live review on Streamlit Cloud with a hosted Postgres and an in-page worker |
+| [0010](0010-clients-sign-in-and-audit.md) | Separate clients, sign in with Google or Microsoft, and keep an audit trail |
 
 Each record has a status. A record is replaced by a new one, never edited to hide a change of mind.

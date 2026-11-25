@@ -60,13 +60,3 @@ def test_every_reason_the_pipeline_can_give_has_plain_words():
     for reason in ("accept", "both_judges_yes", "both_judges_no", "judges_disagree", "judge_missing",
                    "quote_unverified", "parse_failed", "no_quote", ""):
         assert "_" not in plain_reason(reason)
-
-
-def test_access_needs_a_configured_code_and_an_exact_match():
-    from live_data import access_ok
-
-    assert access_ok("open-sesame", "open-sesame")
-    assert not access_ok("open-sesame", "open-sesame ")
-    assert not access_ok("open-sesame", "")
-    assert not access_ok("", "")  # no code configured: closed, even for an empty guess
-    assert not access_ok("", "anything")

@@ -6,7 +6,7 @@ How the system is built and where each part lives. For the reasoning behind each
 
 Find 41 types of clauses in commercial contracts, quote the exact text, prove the quote exists in the contract, and send only doubtful answers to a person. Built and scored on CUAD v1 (510 contracts, 41 clauses).
 
-In scope: retrieval, extraction, quote verification, routing, review by two judges, a human queue, run history, a read-only API and monitoring, and a local live review of uploaded contracts (queue, worker, review page; [ADR 0008](adr/0008-live-review-reuses-the-pipeline.md)). Out of scope: legal advice, contracts outside CUAD, user accounts and sign-in, a hosted multi-user deployment, and fine-tuning a model.
+In scope: retrieval, extraction, quote verification, routing, review by two judges, a human queue, run history, a read-only API and monitoring, a live review of uploaded contracts (queue, worker, review page; [ADR 0008](adr/0008-live-review-reuses-the-pipeline.md)), hosted for several clients with Google or Microsoft sign-in, strict separation between clients and an audit trail ([ADR 0009](adr/0009-hosted-live-review.md), [ADR 0010](adr/0010-clients-sign-in-and-audit.md), [security](security.md)). Out of scope: legal advice, contracts outside CUAD, single sign-on (SAML) and roles within a client, and fine-tuning a model.
 
 ## System overview
 

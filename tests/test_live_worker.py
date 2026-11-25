@@ -73,3 +73,27 @@ def test_a_database_error_does_not_kill_the_loop():
 
     worker.run_loop(broken_connect, None, None, None, stop=stop, poll_seconds=0.01)
     assert len(calls) >= 3
+
+
+def test_the_loop_deletes_uploads_older_than_their_retention(live_db):
+    import threading
+
+    embedder, bank_for = setup(live_db)
+    with live_db() as conn:
+        old = submit(conn, "old.txt", "an old contract")
+        fresh = submit(conn, "new.txt", "a recent contract")
+        conn.execute("UPDATE live_submissions SET status = 'done'")
+        conn.execute("UPDATE live_submissions SET created_at = now() - interval '90 days' WHERE id = %s", (old,))
+        conn.commit()
+    stop, asked = threading.Event(), []
+
+    def should_poll():
+        asked.append(1)
+        if len(asked) > 2:
+            stop.set()
+        return True
+
+    worker.run_loop(live_db, None, embedder, bank_for, should_poll=should_poll, stop=stop, poll_seconds=0.01)
+    with live_db() as conn:
+        assert store.get_submission(conn, T, old) is None
+        assert store.get_submission(conn, T, fresh) is not None

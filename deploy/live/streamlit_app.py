@@ -87,14 +87,16 @@ SCREEN_CSS = """<style>
 [data-testid="stHeader"],[data-testid="stToolbar"]{display:none;}
 .brand{background:linear-gradient(145deg,#EEF4FB 0%,#D2E3F5 100%);color:#17304F;border-radius:6px;
  padding:2.2rem 2rem;min-height:340px}
+.brand .label{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:.9rem}
 .brand .name{font-size:1.6rem;font-weight:700;line-height:1.25;margin-bottom:.8rem}
 .brand .desc{line-height:1.6;margin-bottom:1.6rem;max-width:30ch}
 .brand .point{border-left:3px solid #1F4E79;padding-left:.7rem;margin-bottom:.7rem;font-weight:600;font-size:.95rem}
 .screen-title{font-size:1.5rem;font-weight:700;margin:3.2rem 0 .2rem}
 .screen-hint{opacity:.7;margin-bottom:1.4rem}
 </style>"""
-BRAND = """<div class="brand"><div class="name">Contract clause review</div>
-<div class="desc">Upload a contract and get the key clauses back with the exact wording quoted from your document, ready for a person to confirm.</div>
+BRAND = """<div class="brand"><div class="label">Contract clause review</div>
+<div class="name">Review contracts with quoted evidence</div>
+<div class="desc">Upload a contract and get the key clauses back, each with the exact wording from your document, ready for a person to confirm.</div>
 <div class="point">Clause extraction</div><div class="point">Quoted evidence</div>
 <div class="point">Human review</div></div>"""
 

@@ -1,6 +1,6 @@
 # 0009. Host the live review on Streamlit Cloud with a hosted Postgres and an in-page worker
 
-Status: accepted
+Status: accepted. The access decision (one shared code) is replaced by [ADR 0010](0010-clients-sign-in-and-audit.md).
 
 ## Context
 

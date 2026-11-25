@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import hmac
 import html
 import io
 
@@ -95,3 +96,9 @@ def counts(answers: list[dict]) -> dict:
         status = final_status(a)
         result[status] = result.get(status, 0) + 1
     return result
+
+
+def access_ok(expected: str, supplied: str) -> bool:
+    """True only when an access code is configured and the supplied one matches (constant-time compare).
+    No configured code means closed, never open."""
+    return bool(expected) and hmac.compare_digest(expected.encode(), (supplied or "").encode())

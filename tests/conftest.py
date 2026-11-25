@@ -47,22 +47,35 @@ def live_db(tmp_path):
         url = server.get_uri()
 
     schema = "live_test_" + uuid.uuid4().hex[:8]
+    created = [schema]
     with psycopg.connect(url, autocommit=True) as admin:
         admin.execute("CREATE EXTENSION IF NOT EXISTS vector")
         admin.execute(f"CREATE SCHEMA {schema}")
 
-    def connect():
-        return psycopg.connect(url, options=f"-c search_path={schema},public")
+    def connect_to(name):
+        return lambda: psycopg.connect(url, options=f"-c search_path={name},public")
+
+    connect = connect_to(schema)
+
+    def empty_schema():
+        """A second, empty schema in the same database; returns its connect(). Dropped after the test."""
+        name = "live_test_" + uuid.uuid4().hex[:8]
+        created.append(name)
+        with psycopg.connect(url, autocommit=True) as admin:
+            admin.execute(f"CREATE SCHEMA {name}")
+        return connect_to(name)
 
     with connect() as conn:
         conn.execute(Path("sql/schema.sql").read_text(encoding="utf-8"))
         conn.execute(Path("sql/live.sql").read_text(encoding="utf-8"))
         conn.commit()
     connect.url = f"{url}{'&' if '?' in url else '?'}options=-c%20search_path%3D{schema}%2Cpublic"
+    connect.empty_schema = empty_schema
     try:
         yield connect
     finally:
         with psycopg.connect(url, autocommit=True) as admin:
-            admin.execute(f"DROP SCHEMA {schema} CASCADE")
+            for name in created:
+                admin.execute(f"DROP SCHEMA {name} CASCADE")
         if server is not None:
             server.cleanup()

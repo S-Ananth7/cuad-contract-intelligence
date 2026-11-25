@@ -132,6 +132,8 @@ The page shows each answer with its quote highlighted in your contract, both jud
 
 To use it from code, set `LIVE_API_KEY` and start `python -m cuad_ai serve`; the endpoints (`POST /submissions`, `GET /submissions/{id}`, `PUT /submissions/{id}/answers/{answer}/review`, `DELETE /submissions/{id}`) then appear in `/docs` and need an `X-API-Key` header.
 
+To host it for a client (hosted Postgres, Streamlit Cloud, access code), follow [`docs/deploy-live.md`](docs/deploy-live.md).
+
 The 0.757 / 0.916 scores belong to the 102 CUAD test contracts. They do not describe how the system does on your contract.
 
 ## Keeping the result honest
@@ -144,7 +146,7 @@ Official train and test split. The example bank excludes every company that appe
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | Components, data model, data flow, operations |
 | [`docs/evaluation-protocol.md`](docs/evaluation-protocol.md) | Splits, leakage rules, metric definitions, what is and is not measured |
-| [`docs/adr/`](docs/adr/README.md) | Eight decision records: what was chosen, why, and what it costs |
+| [`docs/adr/`](docs/adr/README.md) | Nine decision records: what was chosen, why, and what it costs |
 | [`notes/final_test_result.md`](notes/final_test_result.md) | The final result, controls and frozen settings |
 | [`notes/`](notes/) | Design history: production design, routing, retrieval, earlier decisions |
 

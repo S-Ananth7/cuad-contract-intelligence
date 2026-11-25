@@ -34,3 +34,42 @@ def test_a_crash_inside_a_job_marks_it_failed_instead_of_leaving_it_running(live
     with live_db() as conn:
         job = store.get_submission(conn, sid)
         assert job["status"] == "failed" and "RuntimeError" in job["error"]
+
+
+def test_the_loop_polls_only_while_asked_and_stops_when_told(live_db):
+    import threading
+
+    embedder, bank_for = setup(live_db)
+    with live_db() as conn:
+        sid = store.submit(conn, "a.txt", CONTRACT)
+    stop, asked = threading.Event(), []
+
+    def should_poll():
+        asked.append(1)
+        if len(asked) == 1:
+            return False  # idle: the database must not be touched, the job stays queued
+        if len(asked) > 3:
+            stop.set()
+        return True
+
+    worker.run_loop(live_db, FakeModel({"Governing Law": DELAWARE}), embedder, bank_for,
+                    should_poll=should_poll, stop=stop, poll_seconds=0.01)
+    with live_db() as conn:
+        assert store.get_submission(conn, sid)["status"] == "done"
+
+
+def test_a_database_error_does_not_kill_the_loop():
+    import threading
+
+    import psycopg
+
+    calls, stop = [], threading.Event()
+
+    def broken_connect():
+        calls.append(1)
+        if len(calls) >= 3:
+            stop.set()
+        raise psycopg.OperationalError("waking up")
+
+    worker.run_loop(broken_connect, None, None, None, stop=stop, poll_seconds=0.01)
+    assert len(calls) >= 3

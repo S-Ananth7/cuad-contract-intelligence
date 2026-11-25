@@ -22,7 +22,10 @@ TINT = {"Accepted": "#E6F4EA", "Confirmed by reviewer": "#E6F4EA", "Rejected": "
 CARD = {"Accepted": "#1E7B34", "Needs review": "#B26A00", "Rejected": "#B3261E", "Not found": "#5F6368"}
 
 load_dotenv()
-st.set_page_config(page_title="Contract clause review", page_icon="📄", layout="wide")
+try:  # the hosted wrapper has already set this
+    st.set_page_config(page_title="Contract clause review", page_icon="📄", layout="wide")
+except st.errors.StreamlitAPIException:
+    pass
 st.markdown(f"""<style>
 .block-container{{padding-top:1.6rem;max-width:1250px;}} footer{{visibility:hidden;}}
 .legend{{font-size:.88rem;color:#374151;line-height:1.7}} .dot{{display:inline-block;width:.7rem;height:.7rem;border-radius:50%;margin-right:.4rem}}

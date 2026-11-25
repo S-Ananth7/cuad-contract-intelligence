@@ -1,5 +1,5 @@
 import pytest
-from live_fakes import CONTRACT, DELAWARE, FakeEmbedder, FakeModel, load_bank_rows
+from live_fakes import CONTRACT, DELAWARE, FakeEmbedder, FakeModel, T, load_bank_rows, submit
 
 from cuad_ai.ingest import chunk_spans
 from cuad_ai.live import store
@@ -24,13 +24,13 @@ def env(live_db):
 def run(env, model, filename="upload.txt", text=CONTRACT):
     connect, embedder, bank = env
     with connect() as conn:
-        sid = store.submit(conn, filename, text)
+        sid = submit(conn, filename, text)
         sub = store.claim(conn)
-        sub["excluded_company"] = store.get_submission(conn, sid)["excluded_company"]
+        sub["excluded_company"] = store.get_submission(conn, T, sid)["excluded_company"]
     ok = process(connect, sub, model, embedder, bank, workers=2)
     with connect() as conn:
-        answers = {a["clause"]: a for a in store.get_answers(conn, sid)}
-        return ok, store.get_submission(conn, sid), answers
+        answers = {a["clause"]: a for a in store.get_answers(conn, T, sid)}
+        return ok, store.get_submission(conn, T, sid), answers
 
 
 def test_a_whole_upload_runs_and_every_question_gets_an_answer(env):
@@ -102,7 +102,7 @@ def test_a_rerun_starts_clean(env):
                           conn.execute("SELECT id, filename, text, excluded_company FROM live_submissions").fetchone()))}
     process(connect, sub, FakeModel(), embedder, bank, workers=2)
     with connect() as conn:
-        assert {a["decision"] for a in store.get_answers(conn, sub["id"])} == {"not_found"}
+        assert {a["decision"] for a in store.get_answers(conn, T, sub["id"])} == {"not_found"}
         assert conn.execute("SELECT count(*) FROM live_chunks").fetchone()[0] == len(chunk_spans(CONTRACT))
 
 
@@ -125,7 +125,7 @@ def test_live_retrieval_picks_the_same_excerpts_as_the_saved_runs_search(env):
     must choose the same spans in the same order."""
     connect, embedder, bank = env
     with connect() as conn:
-        sid = store.submit(conn, "upload.txt", CONTRACT)
+        sid = submit(conn, "upload.txt", CONTRACT)
         spans = chunk_spans(CONTRACT)
         vectors = [v.tolist() for v in embedder.embed([CONTRACT[s:e] for s, e in spans])]
         store.save_chunks(conn, sid, [(s, e, CONTRACT[s:e], v) for (s, e), v in zip(spans, vectors)])

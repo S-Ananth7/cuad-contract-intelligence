@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from cuad_ai.embed import vector_literal
-from cuad_ai.live import config
+from cuad_ai.live import config, tenants
 
 
 class RejectedUpload(ValueError):
@@ -37,8 +37,13 @@ def bank_company(conn, filename, company=None):
     return row[0] if row else None
 
 
-def submit(conn, filename, text, company=None):
-    """Store an upload and queue it. Returns the submission id. Raises RejectedUpload with a clear reason."""
+def submit(conn, tenant, filename, text, company=None, uploaded_by=""):
+    """Store an upload for one client and queue it. Returns the submission id. Raises RejectedUpload with a reason.
+
+    The same text from the same client is not stored twice; another client's identical file is a separate upload.
+    """
+    if tenants.get_tenant(conn, tenant) is None:
+        raise RejectedUpload("This account is not set up for uploads.")
     text = text.replace("\x00", "")
     if not text.strip():
         raise RejectedUpload("The file is empty.")
@@ -46,18 +51,22 @@ def submit(conn, filename, text, company=None):
         raise RejectedUpload(f"The file has {len(text):,} characters; the limit is {config.max_chars():,}.")
     digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
     same = conn.execute(
-        "SELECT id FROM live_submissions WHERE sha256 = %s AND status <> 'failed' ORDER BY id LIMIT 1",
-        (digest,)).fetchone()
+        "SELECT id FROM live_submissions WHERE tenant = %s AND sha256 = %s AND status <> 'failed' "
+        "ORDER BY id LIMIT 1", (tenant, digest)).fetchone()
     if same:  # the same text again costs nothing: show the answers already there
         return same[0]
-    recent = conn.execute(
-        "SELECT count(*) FROM live_submissions WHERE created_at > now() - interval '24 hours'").fetchone()[0]
-    if recent >= config.daily_cap():
+    cap = conn.execute("SELECT daily_cap FROM live_tenants WHERE id = %s", (tenant,)).fetchone()[0]
+    cap = config.daily_cap() if cap is None else cap
+    mine, everyone = conn.execute(
+        "SELECT count(*) FILTER (WHERE tenant = %s), count(*) FROM live_submissions "
+        "WHERE created_at > now() - interval '24 hours'", (tenant,)).fetchone()
+    if mine >= cap or everyone >= config.global_cap():
         raise LimitReached("The daily upload limit has been reached. Please try again tomorrow.")
     row = conn.execute(
-        "INSERT INTO live_submissions (filename, text, n_chars, sha256, excluded_company) "
-        "VALUES (%s, %s, %s, %s, %s) RETURNING id",
-        (Path(filename).name[:200], text, len(text), digest, bank_company(conn, filename, company))).fetchone()
+        "INSERT INTO live_submissions (tenant, uploaded_by, filename, text, n_chars, sha256, excluded_company) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
+        (tenant, uploaded_by[:200], Path(filename).name[:200], text, len(text), digest,
+         bank_company(conn, filename, company))).fetchone()
     conn.commit()
     return row[0]
 
@@ -142,20 +151,23 @@ SUBMISSION_COLUMNS = ("id", "filename", "n_chars", "status", "error", "done_ques
                       "tokens_in", "tokens_out", "excluded_company", "created_at", "finished_at")
 
 
-def get_submission(conn, submission_id):
-    row = conn.execute(f"SELECT {', '.join(SUBMISSION_COLUMNS)} FROM live_submissions WHERE id = %s",
-                       (submission_id,)).fetchone()
+def get_submission(conn, tenant, submission_id):
+    """One of this client's uploads, or None. An id that belongs to another client is simply not found."""
+    row = conn.execute(f"SELECT {', '.join(SUBMISSION_COLUMNS)} FROM live_submissions WHERE id = %s AND tenant = %s",
+                       (submission_id, tenant)).fetchone()
     return dict(zip(SUBMISSION_COLUMNS, row)) if row else None
 
 
-def list_submissions(conn, limit=50):
+def list_submissions(conn, tenant, limit=50):
     rows = conn.execute(
-        f"SELECT {', '.join(SUBMISSION_COLUMNS)} FROM live_submissions ORDER BY id DESC LIMIT %s", (limit,)).fetchall()
+        f"SELECT {', '.join(SUBMISSION_COLUMNS)} FROM live_submissions WHERE tenant = %s ORDER BY id DESC LIMIT %s",
+        (tenant, limit)).fetchall()
     return [dict(zip(SUBMISSION_COLUMNS, row)) for row in rows]
 
 
-def get_text(conn, submission_id):
-    row = conn.execute("SELECT text FROM live_submissions WHERE id = %s", (submission_id,)).fetchone()
+def get_text(conn, tenant, submission_id):
+    row = conn.execute("SELECT text FROM live_submissions WHERE id = %s AND tenant = %s",
+                       (submission_id, tenant)).fetchone()
     return row[0] if row else None
 
 
@@ -163,25 +175,27 @@ ANSWER_COLUMNS = ("id", "clause", "decision", "reason", "quotes", "spans", "risk
                   "verdict2", "looks_like", "retried", "review_action", "review_note", "reviewer")
 
 
-def get_answers(conn, submission_id):
+def get_answers(conn, tenant, submission_id):
     """Every answer of one upload, with the person's decision when there is one, in clause order."""
     rows = conn.execute(
         "SELECT a.id, a.clause, a.decision, a.reason, a.quotes, a.spans, a.risk, a.rank_asked, a.verdict, "
         "a.verdict2, a.looks_like, a.retried, r.action, r.note, r.reviewer "
         "FROM live_answers a LEFT JOIN live_reviews r ON r.answer_id = a.id "
-        "WHERE a.submission_id = %s ORDER BY a.clause", (submission_id,)).fetchall()
+        "WHERE a.submission_id = %s AND a.submission_id IN (SELECT id FROM live_submissions WHERE tenant = %s) "
+        "ORDER BY a.clause", (submission_id, tenant)).fetchall()
     return [dict(zip(ANSWER_COLUMNS, row)) for row in rows]
 
 
-def review_answer(conn, submission_id, answer_id, reviewer, action, note=""):
+def review_answer(conn, tenant, submission_id, answer_id, reviewer, action, note=""):
     """Record a person's confirm or reject. Raises LookupError if the answer is not part of this upload."""
     if action not in ("confirm", "reject"):
         raise ValueError("action must be 'confirm' or 'reject'")
     reviewer = reviewer.strip()
     if not reviewer:
         raise ValueError("a reviewer name is required")
-    found = conn.execute("SELECT 1 FROM live_answers WHERE id = %s AND submission_id = %s",
-                         (answer_id, submission_id)).fetchone()
+    found = conn.execute(
+        "SELECT 1 FROM live_answers a JOIN live_submissions s ON s.id = a.submission_id "
+        "WHERE a.id = %s AND a.submission_id = %s AND s.tenant = %s", (answer_id, submission_id, tenant)).fetchone()
     if not found:
         raise LookupError("no such answer")
     conn.execute(
@@ -192,15 +206,20 @@ def review_answer(conn, submission_id, answer_id, reviewer, action, note=""):
     conn.commit()
 
 
-def clear_review(conn, submission_id, answer_id):
-    conn.execute(
+def clear_review(conn, tenant, submission_id, answer_id):
+    """Take a review back. Returns True if there was one to remove (False for another client's answer too)."""
+    row = conn.execute(
         "DELETE FROM live_reviews WHERE answer_id = %s AND answer_id IN "
-        "(SELECT id FROM live_answers WHERE submission_id = %s)", (answer_id, submission_id))
+        "(SELECT a.id FROM live_answers a JOIN live_submissions s ON s.id = a.submission_id "
+        "WHERE a.submission_id = %s AND s.tenant = %s) RETURNING answer_id",
+        (answer_id, submission_id, tenant)).fetchone()
     conn.commit()
+    return row is not None
 
 
-def delete_submission(conn, submission_id):
-    """Remove an upload and everything derived from it. Returns True if it existed."""
-    row = conn.execute("DELETE FROM live_submissions WHERE id = %s RETURNING id", (submission_id,)).fetchone()
+def delete_submission(conn, tenant, submission_id):
+    """Remove one of this client's uploads and everything derived from it. Returns True if it existed."""
+    row = conn.execute("DELETE FROM live_submissions WHERE id = %s AND tenant = %s RETURNING id",
+                       (submission_id, tenant)).fetchone()
     conn.commit()
     return row is not None

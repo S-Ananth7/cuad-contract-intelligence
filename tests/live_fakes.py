@@ -6,15 +6,16 @@ import re
 import numpy as np
 
 from cuad_ai.embed import vector_literal
+from cuad_ai.live import store, tenants
 
 GOVERNING = "This Agreement shall be governed by and construed in accordance with the laws of the State of New York."
 ASSIGN = "Neither party may assign this Agreement without the prior written consent of the other party."
 CONTRACT = (
     "SERVICES AGREEMENT\n\nThis Services Agreement is made between Gamma Corp and Delta LLC.\n\n"
-    + "The supplier shall provide the services described in Schedule A and invoice monthly. " * 30
-    + "\n\nThis Agreement shall be governed   by the laws of the\nState of Delaware.\n\n"
-    + "Neither party may assign this Agreement without prior written consent. " * 3
-    + "\n\nThe fees are payable within thirty days of the invoice date. " * 20
+    +"The supplier shall provide the services described in Schedule A and invoice monthly. " * 30
+    +"\n\nThis Agreement shall be governed   by the laws of the\nState of Delaware.\n\n"
+    +"Neither party may assign this Agreement without prior written consent. " * 3
+    +"\n\nThe fees are payable within thirty days of the invoice date. " * 20
 )
 DELAWARE = "This Agreement shall be governed by the laws of the State of Delaware."  # as the model quotes it
 
@@ -69,3 +70,13 @@ def load_bank_rows(conn, embedder):
         conn.execute("INSERT INTO highlights (contract_id, clause_id, start_char, end_char, text, embedding) "
                      "VALUES (%s, %s, 0, %s, %s, %s::vector)", (contract_id, clause_id, len(text), text, vector))
     conn.commit()
+
+
+T = "acme"  # the client the existing tests upload as
+
+
+def submit(conn, filename, text, tenant=T, **kw):
+    """Store an upload for a test client, creating the client first if it does not exist."""
+    if tenants.get_tenant(conn, tenant) is None:
+        tenants.create_tenant(conn, tenant, tenant.title())
+    return store.submit(conn, tenant, filename, text, **kw)

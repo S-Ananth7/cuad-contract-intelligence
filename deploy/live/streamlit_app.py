@@ -1,13 +1,15 @@
 """Hosted entry point for the live review (Streamlit Community Cloud). Main file path: deploy/live/streamlit_app.py
 
 What it adds to app/live_app.py:
-  - an access code screen (secret LIVE_ACCESS_CODE; if it is not set the page stays closed),
+  - Google / Microsoft sign-in (Streamlit's st.login, configured by the [auth] secrets). Only an email on the
+    allow-list may enter, and it sees only its own client's contracts (see docs/security.md). Closed if not set up,
   - a background thread that runs the worker, because Streamlit Cloud has no separate worker process. The thread
     asks the database for work only while someone has used the page in the last 30 minutes, so an idle
     deployment does not keep a hosted database awake. Jobs wait in the database and are picked up on the next visit.
 
 Settings come from the app's Secrets (see docs/deploy-live.md): DATABASE_URL, LLM_API_KEY, LLM_BASE_URL, LLM_MODEL,
-LIVE_ACCESS_CODE, and optionally LIVE_DAILY_CAP, LIVE_TOKEN_CAP, LIVE_MAX_CHARS, LIVE_WORKERS.
+the [auth] sections, and optionally LIVE_SIGNIN_PROVIDERS, LIVE_TRUSTED_MS_TENANTS, LIVE_DAILY_CAP, LIVE_TOKEN_CAP,
+LIVE_MAX_CHARS, LIVE_WORKERS.
 """
 from __future__ import annotations
 
@@ -24,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT / "app")]
 os.chdir(ROOT)  # prompts, the risk table and sql/ are read relative to the repository root
 
-from live_data import access_ok  # noqa: E402
+from cuad_ai.live.signin import tenant_ids, verified_email  # noqa: E402
 
 IDLE_SECONDS = 30 * 60
 
@@ -80,23 +82,60 @@ def background_worker():
     return state
 
 
-expected = os.environ.get("LIVE_ACCESS_CODE", "")
-if not expected:
+def sign_in_screen():
     st.title("Contract clause review")
-    st.error("This deployment is not configured: the LIVE_ACCESS_CODE secret is missing, so the page stays closed.")
+    st.write("Sign in with the account your administrator added. Each client sees only its own contracts.")
+    try:
+        configured = "auth" in st.secrets
+    except Exception:
+        configured = False
+    if not configured:
+        st.error("Sign-in is not set up on this deployment (the [auth] secrets are missing), so the page stays closed.")
+        return
+    providers = [p.strip() for p in os.environ.get("LIVE_SIGNIN_PROVIDERS", "google,microsoft").split(",") if p.strip()]
+    for provider, column in zip(providers, st.columns(len(providers))):
+        if column.button(f"Sign in with {provider.replace('_', ' ').title()}", key=f"login-{provider}", width="stretch"):
+            st.login(provider)
+
+
+def allowed_client(email):
+    """The client this email may use, or None. Looked up on every run, so removing someone takes effect at once."""
+    import psycopg
+
+    from cuad_ai.live import store, tenants
+
+    try:
+        with psycopg.connect(os.environ["DATABASE_URL"], connect_timeout=10) as conn:
+            store.ensure_schema(conn)
+            tenant = tenants.tenant_for_email(conn, email) if email else None
+            if tenant and not st.session_state.get("login_logged"):
+                tenants.audit(conn, tenant, email, "login")
+                st.session_state["login_logged"] = True
+            return tenant
+    except (KeyError, psycopg.Error):
+        st.title("Contract clause review")
+        st.error("The database did not answer, so nobody can be signed in right now. Please try again shortly.")
+        st.stop()
+
+
+if not getattr(st.user, "is_logged_in", False):  # missing means not signed in: stay closed
+    for key in ("tenant", "email", "login_logged"):
+        st.session_state.pop(key, None)
+    sign_in_screen()
     st.stop()
 
-if not st.session_state.get("granted"):
+email = verified_email(st.user.to_dict(), tenant_ids(os.environ.get("LIVE_TRUSTED_MS_TENANTS", "")))
+tenant = allowed_client(email)
+if tenant is None:
+    for key in ("tenant", "email", "login_logged"):
+        st.session_state.pop(key, None)
     st.title("Contract clause review")
-    st.write("Enter the access code you were given.")
-    code = st.text_input("Access code", type="password")
-    if code:
-        if access_ok(expected, code):
-            st.session_state["granted"] = True
-            st.rerun()
-        time.sleep(1)  # slows down guessing
-        st.error("That code is not right.")
+    st.error("This account has not been given access. Ask your administrator to add your email address, "
+             "then sign out and sign in again.")
+    st.button("Sign out", on_click=st.logout)
     st.stop()
+st.session_state["tenant"], st.session_state["email"] = tenant, email
+st.sidebar.button("Sign out", on_click=st.logout)
 
 worker = background_worker()
 worker["last_seen"] = time.time()

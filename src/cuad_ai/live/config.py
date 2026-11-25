@@ -9,7 +9,15 @@ def max_chars():
 
 
 def daily_cap():
-    return env_int("LIVE_DAILY_CAP", 20)  # uploads accepted per rolling 24 hours, all users together
+    return env_int("LIVE_DAILY_CAP", 20)  # uploads one client may make per rolling 24 hours (a client can override)
+
+
+def global_cap():
+    return env_int("LIVE_GLOBAL_DAILY_CAP", 100)  # uploads across all clients per 24 hours: protects the model bill
+
+
+def retention_days():
+    return env_int("LIVE_RETENTION_DAYS", 30)  # default for a client with no setting of its own
 
 
 def workers():
@@ -24,11 +32,7 @@ def stale_minutes():
     return env_int("LIVE_STALE_MINUTES", 10)  # a running job with no heartbeat this long is put back in the queue
 
 
-def access_key():
-    """The key callers must send (header X-API-Key) to use the live endpoints. Unset means they are switched off:
-    the live review spends model tokens, so it is never open by default."""
-    return env_text("LIVE_API_KEY", "")
-
-
 def enabled():
-    return bool(access_key())
+    """Whether the HTTP endpoints exist. Off unless LIVE_API is set to 1/true/yes/on: the live review spends model
+    tokens, so it is never open by default. Callers then need a client's API key (made with `cuad live-admin key`)."""
+    return env_text("LIVE_API", "").strip().lower() in ("1", "true", "yes", "on")

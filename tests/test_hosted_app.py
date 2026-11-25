@@ -10,19 +10,23 @@ from streamlit.testing.v1 import AppTest  # noqa: E402
 PAGE = str(Path(__file__).resolve().parents[1] / "deploy" / "live" / "streamlit_app.py")
 
 
-def test_without_an_access_code_secret_the_page_stays_closed(monkeypatch):
-    monkeypatch.delenv("LIVE_ACCESS_CODE", raising=False)
-    page = AppTest.from_file(PAGE, default_timeout=30).run()
-    assert not page.exception
-    assert "LIVE_ACCESS_CODE" in page.error[0].value
-    assert not page.text_input  # nothing to type into: there is no way in
+def no_worker():
+    return "live-worker" not in [t.name for t in threading.enumerate()]
 
 
-def test_a_wrong_code_is_refused_and_does_not_start_the_worker(monkeypatch):
-    monkeypatch.setenv("LIVE_ACCESS_CODE", "right-code")
+def test_without_sign_in_secrets_the_page_stays_closed():
     page = AppTest.from_file(PAGE, default_timeout=30).run()
-    page.text_input[0].set_value("wrong").run()
     assert not page.exception
-    assert "not right" in page.error[0].value
-    assert "granted" not in page.session_state
-    assert "live-worker" not in [t.name for t in threading.enumerate()]
+    assert "not set up" in page.error[0].value
+    assert not page.button and not page.text_input  # no way in
+    assert "tenant" not in page.session_state and no_worker()
+
+
+def test_with_sign_in_set_up_the_page_offers_the_providers_and_nothing_else():
+    page = AppTest.from_file(PAGE, default_timeout=30)
+    page.secrets["auth"] = {"redirect_uri": "http://localhost/oauth2callback", "cookie_secret": "x"}
+    page.run()
+    assert not page.exception
+    assert [b.label for b in page.button] == ["Sign in with Google", "Sign in with Microsoft"]
+    assert not page.text_input  # no code box to guess at
+    assert "tenant" not in page.session_state and no_worker()

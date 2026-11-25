@@ -13,6 +13,7 @@ STAGES = {
     "freeze-risk": ("cuad_ai.pipeline.risk", "<validation run folders...>: write evals/risk_table.json"),
     "pipeline": ("cuad_ai.pipeline.run_all", "[run folder]: every stage in order (extracts first when no folder is given)"),
     "worker": ("cuad_ai.live.worker", "run the live-review worker: processes uploaded contracts from the queue"),
+    "live-admin": ("cuad_ai.live.admin", "[--hosted] <command>: clients, who may sign in, API keys, audit, purge"),
     "serve": ("cuad_ai.api", "[host] [port]: read-only API over stored runs (needs the api extra)"),
 }
 

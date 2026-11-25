@@ -62,3 +62,40 @@ CREATE TABLE IF NOT EXISTS live_reviews (
     note TEXT NOT NULL DEFAULT '',
     reviewed_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ---- Clients (tenants), sign-in allow-list and audit trail. Added in ADR 0010; every statement is additive. ----
+
+-- A client of the service. Its people can only ever see its own uploads.
+CREATE TABLE IF NOT EXISTS live_tenants (
+    id TEXT PRIMARY KEY CHECK (id ~ '^[a-z0-9][a-z0-9_-]{0,39}$'),
+    name TEXT NOT NULL,
+    retention_days INT NOT NULL DEFAULT 30 CHECK (retention_days >= 1),   -- uploads older than this are deleted
+    daily_cap INT CHECK (daily_cap >= 0),                                  -- NULL = the global default
+    api_key_sha256 TEXT UNIQUE,                                            -- only the hash of the key is kept
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Who may sign in, and for which client. One email belongs to exactly one client.
+CREATE TABLE IF NOT EXISTS live_users (
+    email TEXT PRIMARY KEY CHECK (email = lower(email)),
+    tenant TEXT NOT NULL REFERENCES live_tenants(id) ON DELETE CASCADE,
+    added_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Uploads made before clients existed fall under 'legacy'. Nobody can sign in to it.
+ALTER TABLE live_submissions ADD COLUMN IF NOT EXISTS tenant TEXT NOT NULL DEFAULT 'legacy';
+ALTER TABLE live_submissions ADD COLUMN IF NOT EXISTS uploaded_by TEXT NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS live_submissions_tenant_idx ON live_submissions (tenant, id DESC);
+CREATE INDEX IF NOT EXISTS live_submissions_tenant_sha_idx ON live_submissions (tenant, sha256);
+
+-- Who did what, when. Keeps the file name, never the contract text. Survives deleting the upload.
+CREATE TABLE IF NOT EXISTS live_audit (
+    id BIGSERIAL PRIMARY KEY,
+    at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    tenant TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL,
+    submission_id INT,
+    detail TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS live_audit_tenant_idx ON live_audit (tenant, id DESC);

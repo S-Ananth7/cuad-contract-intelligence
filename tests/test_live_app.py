@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("streamlit")
 
-from live_fakes import CONTRACT, DELAWARE  # noqa: E402
+from live_fakes import CONTRACT, DELAWARE, T, submit  # noqa: E402
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
 from cuad_ai.live import store  # noqa: E402
@@ -21,7 +21,7 @@ def test_without_a_database_the_page_explains_instead_of_crashing(monkeypatch):
 
 def seed(connect):
     with connect() as conn:
-        sid = store.submit(conn, "Gamma_2020.txt", CONTRACT)
+        sid = submit(conn, "Gamma_2020.txt", CONTRACT)
         from cuad_ai.live.locate import locate
         span = list(locate(CONTRACT, DELAWARE))
         base = {"reason": "", "quotes": [], "spans": [], "risk": None, "rank_asked": None, "verdict": None,
@@ -36,6 +36,7 @@ def seed(connect):
 
 def test_the_page_shows_answers_highlights_the_quote_and_records_a_review(live_db, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", live_db.url)
+    monkeypatch.setenv("LIVE_LOCAL_TENANT", T)
     sid = seed(live_db)
     page = AppTest.from_file(PAGE, default_timeout=60).run()
     assert not page.exception
@@ -46,5 +47,5 @@ def test_the_page_shows_answers_highlights_the_quote_and_records_a_review(live_d
     next(b for b in page.button if b.label == "Confirm").click().run()
     assert not page.exception
     with live_db() as conn:
-        answers = {a["clause"]: a for a in store.get_answers(conn, sid)}
+        answers = {a["clause"]: a for a in store.get_answers(conn, T, sid)}
     assert (answers["Governing Law"]["review_action"], answers["Governing Law"]["reviewer"]) == ("confirm", "Priya")

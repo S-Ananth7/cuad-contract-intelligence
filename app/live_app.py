@@ -13,7 +13,7 @@ import psycopg
 import streamlit as st
 from dotenv import load_dotenv
 
-from cuad_ai.live import config, store
+from cuad_ai.live import config, store, tenants
 from live_data import export_csv, final_status, highlight_html, plain_reason, summary
 
 NAVY = "#1F4E79"
@@ -54,6 +54,22 @@ except psycopg.Error as error:
              f"point at it? ({type(error).__name__})")
     st.stop()
 
+# Who is this? The hosted sign-in wrapper sets these after login. Run directly, it is a private local client.
+tenant = st.session_state.get("tenant")
+email = st.session_state.get("email")
+if tenant is None:
+    tenant = os.environ.get("LIVE_LOCAL_TENANT", "local")
+    with connect() as conn:
+        if tenants.get_tenant(conn, tenant) is None:
+            tenants.create_tenant(conn, tenant, tenant.title())
+with connect() as conn:
+    client = tenants.get_tenant(conn, tenant)
+if client is None:
+    st.title("Contract clause review")
+    st.error("Your account is not set up. Please contact the person who gave you access.")
+    st.stop()
+cap = client["daily_cap"] if client["daily_cap"] is not None else config.daily_cap()
+
 st.title("Contract clause review")
 st.markdown("Upload a contract. The system looks for **41 kinds of clauses**, quotes the exact words for each, "
             "and checks that every quote really appears in your contract. Doubtful answers come to you to confirm or reject.")
@@ -72,7 +88,10 @@ with st.expander("How to read the results", expanded=False):
 
 with st.sidebar:
     st.header("Your review")
-    reviewer = st.text_input("Your name", key="reviewer", help="Saved with each decision you make.")
+    if email:
+        st.caption(f"Signed in as **{email}**. Your decisions are saved under this address.")
+    else:
+        st.text_input("Your name", key="reviewer", help="Saved with each decision you make.")
     st.divider()
     st.subheader("Add a contract")
     upload = st.file_uploader("Plain text (.txt)", type=["txt"], label_visibility="collapsed")
@@ -80,14 +99,16 @@ with st.sidebar:
         try:
             with connect() as conn:
                 st.session_state["current"] = store.submit(
-                    conn, upload.name, upload.getvalue().decode("utf-8", "replace"))
+                    conn, tenant, upload.name, upload.getvalue().decode("utf-8", "replace"),
+                    uploaded_by=email or st.session_state.get("reviewer", "") or "local")
+                tenants.audit(conn, tenant, email or "local", "upload", st.session_state["current"], upload.name)
         except store.RejectedUpload as error:
             st.error(str(error))
-    st.caption(f"Up to {config.max_chars():,} characters per file and {config.daily_cap()} uploads a day. "
-               "Your text is sent to the model provider and stored here until you delete it.")
+    st.caption(f"Up to {config.max_chars():,} characters per file and {cap} uploads a day. Your text is sent to "
+               f"the model provider and deleted automatically after {client['retention_days']} days, or sooner if you delete it.")
 
 with connect() as conn:
-    submissions = store.list_submissions(conn, 30)
+    submissions = store.list_submissions(conn, tenant, 30)
 if not submissions:
     st.info("No contracts yet. Add a .txt contract in the sidebar and it will appear here.")
     st.stop()
@@ -116,9 +137,12 @@ def color_status(value: str) -> str:
 @st.fragment(run_every=3 if active else None)
 def show(submission_id: int):
     with connect() as conn:
-        sub = store.get_submission(conn, submission_id)
-        answers = store.get_answers(conn, submission_id)
-        text = store.get_text(conn, submission_id) or ""
+        sub = store.get_submission(conn, tenant, submission_id)
+        answers = store.get_answers(conn, tenant, submission_id)
+        text = store.get_text(conn, tenant, submission_id) or ""
+    if sub is None:
+        st.warning("That contract is no longer available.")
+        return
     if sub["status"] in ("queued", "running"):
         st.session_state[f"poll{submission_id}"] = True
         total = sub["total_questions"] or 1
@@ -184,21 +208,24 @@ def show(submission_id: int):
             st.write("The checkers thought it looks more like: " + ", ".join(a["looks_like"]))
         if a["review_action"]:
             st.caption(f"{a['reviewer']} {a['review_action']}ed this" + (f": {a['review_note']}" if a["review_note"] else ""))
-        who = st.session_state.get("reviewer", "").strip()
+        who = email or st.session_state.get("reviewer", "").strip()
         if a["quotes"]:
             note = st.text_input("Note (optional)", key=f"note{pick}")
             confirm, reject, undo = st.columns(3)
             if confirm.button("Confirm", key=f"c{pick}", disabled=not who, type="primary", width="stretch"):
                 with connect() as conn:
-                    store.review_answer(conn, submission_id, pick, who, "confirm", note)
+                    store.review_answer(conn, tenant, submission_id, pick, who, "confirm", note)
+                    tenants.audit(conn, tenant, who, "review:confirm", submission_id, a["clause"])
                 st.rerun()
             if reject.button("Reject", key=f"r{pick}", disabled=not who, width="stretch"):
                 with connect() as conn:
-                    store.review_answer(conn, submission_id, pick, who, "reject", note)
+                    store.review_answer(conn, tenant, submission_id, pick, who, "reject", note)
+                    tenants.audit(conn, tenant, who, "review:reject", submission_id, a["clause"])
                 st.rerun()
             if a["review_action"] and undo.button("Undo", key=f"u{pick}", width="stretch"):
                 with connect() as conn:
-                    store.clear_review(conn, submission_id, pick)
+                    store.clear_review(conn, tenant, submission_id, pick)
+                    tenants.audit(conn, tenant, who, "review:clear", submission_id, a["clause"])
                 st.rerun()
             if not who:
                 st.caption("Enter your name in the sidebar to record a decision.")
@@ -211,11 +238,16 @@ def show(submission_id: int):
                          file_name=f"{sub['filename']}.review.csv", mime="text/csv")
     if right.button("Delete this contract and its results", key=f"del{submission_id}"):
         with connect() as conn:
-            store.delete_submission(conn, submission_id)
+            if store.delete_submission(conn, tenant, submission_id):
+                tenants.audit(conn, tenant, email or "local", "delete", submission_id, sub["filename"])
         st.session_state.pop("current", None)
         st.rerun()
 
 
+if st.session_state.get("viewed") != (tenant, chosen):
+    st.session_state["viewed"] = (tenant, chosen)
+    with connect() as conn:
+        tenants.audit(conn, tenant, email or "local", "view", chosen)
 show(chosen)
 st.caption("Answers are suggestions from a language model plus automatic checks, not legal advice. "
            "Accuracy figures belong to the CUAD test set, not to your contract.")

@@ -126,6 +126,9 @@ def sign_in_screen():
             if st.button(f"Sign in with {provider.replace('_', ' ').title()}", key=f"login-{provider}",
                          width="stretch"):
                 st.login(provider)
+        sample = os.environ.get("LIVE_SAMPLE_URL", "").strip()
+        if sample.startswith("https://"):  # a public read-only page with sample results, set once it exists
+            st.link_button("View sample results", sample, width="stretch")
 
 
 def allowed_client(email):

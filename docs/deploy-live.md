@@ -44,6 +44,8 @@ Open **Advanced settings > Secrets** and paste the values from `deploy/live/secr
 
 Then open the app's **Settings > Sharing** and make the app **public**. This is not the same as open access: the page itself shows only the sign-in screen until a person on the allow-list signs in. A private Streamlit app would put Streamlit's own viewer login in front, and your clients would never reach yours.
 
+*Optional: sample results for visitors.* Deploy the public read-only demo as its own app (main file `app/streamlit_app.py`), then add `LIVE_SAMPLE_URL = "https://YOUR-SAMPLE-APP.streamlit.app"` to the live app's Secrets and reboot it. The sign-in screen then shows a "View sample results" button. Without the secret there is no button.
+
 ## 5. Add clients and people
 
 ```powershell

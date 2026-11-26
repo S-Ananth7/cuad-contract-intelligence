@@ -45,7 +45,7 @@ Per-client daily upload cap, a global daily cap, a token cap per upload and a fi
 - Single sign-on (SAML), roles within a client (everyone in a client sees all of that client's uploads) and approval workflows.
 - Per-client encryption keys; clients share one database, separated by the checks above.
 - Guaranteed uptime or backups on the free tiers: Streamlit Community Cloud puts idle apps to sleep, and Neon's free plan has limited storage and history.
-- Content scanning: files are treated as text. Only `.txt` is accepted.
+- Malware scanning and OCR: PDF, Word and text files are read as text only (nothing in them is run), unpacked sizes and page counts are capped, and scanned PDFs, spreadsheets, images and old `.doc` files are refused. The original file is never stored, only the text read from it.
 - Legal advice: answers are suggestions from a language model plus automatic checks.
 
 ## How the separation is verified

@@ -81,7 +81,7 @@ Running `add-client` again replaces that client's settings, so repeat the values
 
 - **The worker runs inside the page.** Streamlit Cloud has no background process, so a thread does the work. It asks the database for jobs only while someone used the page in the last 30 minutes, and it deletes expired uploads every six hours while it runs.
 - **Sleeping apps.** Streamlit Cloud puts idle apps to sleep. Uploads and decisions stay in the database. Opening the app wakes it and restarts the worker; a job interrupted mid-run is put back in the queue after 10 minutes without progress.
-- **Cost control.** `LIVE_DAILY_CAP` (uploads per client per day), `LIVE_GLOBAL_DAILY_CAP` (all clients together), `LIVE_TOKEN_CAP` (tokens per upload) and `LIVE_MAX_CHARS` (file size). A typical contract uses about 100,000 tokens.
+- **Cost control.** `LIVE_DAILY_CAP` (uploads per client per day), `LIVE_GLOBAL_DAILY_CAP` (all clients together), `LIVE_TOKEN_CAP` (tokens per upload), `LIVE_MAX_CHARS` (text length) and `LIVE_MAX_FILE_MB` / `LIVE_MAX_PAGES` (the uploaded file itself). A typical contract uses about 100,000 tokens.
 - **Deleting data.** Each contract page has a delete button that removes the upload and everything derived from it. The audit trail keeps the file name and the fact of deletion, never the text.
 
 ## When something goes wrong
@@ -99,4 +99,4 @@ Running `add-client` again replaces that client's settings, so repeat the values
 
 ## Not included
 
-Single sign-on (SAML), roles within a client, per-client encryption keys, PDF and Word upload, an alert when a cap is hit, and guaranteed uptime or backups on the free tiers. For a larger rollout, move the worker to its own service and the database to a paid plan ([ADR 0009](adr/0009-hosted-live-review.md), [security.md](security.md)).
+Single sign-on (SAML), roles within a client, per-client encryption keys, reading scanned PDFs (OCR) and spreadsheets, an alert when a cap is hit, and guaranteed uptime or backups on the free tiers. For a larger rollout, move the worker to its own service and the database to a paid plan ([ADR 0009](adr/0009-hosted-live-review.md), [security.md](security.md)).

@@ -14,7 +14,7 @@ import psycopg
 import streamlit as st
 from dotenv import load_dotenv
 
-from cuad_ai.live import config, store, tenants
+from cuad_ai.live import config, readfile, store, tenants
 from live_data import export_csv, final_status, highlight_html, plain_reason, summary
 
 # One neutral palette (the app theme). The only status that asks for action, "Needs review", gets a quiet tint.
@@ -82,7 +82,7 @@ def welcome() -> None:
                  "answer. Every quote is checked against your document, and anything doubtful is left for you to "
                  "confirm or reject.")
         one, two, three = st.columns(3)
-        one.markdown("**1. Upload**  \nAdd a plain-text (.txt) contract in the sidebar.")
+        one.markdown("**1. Upload**  \nAdd a PDF, Word or text contract in the sidebar.")
         two.markdown("**2. Wait**  \nA review takes a few minutes. You can leave this page open.")
         three.markdown("**3. Review**  \nStart with Needs review, then skim the accepted answers.")
         st.caption(f"Contracts are visible only to {client['name']}. They are deleted automatically after "
@@ -98,12 +98,13 @@ with st.sidebar:
         st.text_input("Your name", key="reviewer", help="Saved with each decision you make.")
     st.divider()
     st.subheader("Add a contract")
-    upload = st.file_uploader("Plain text (.txt)", type=["txt"], label_visibility="collapsed")
+    upload = st.file_uploader("Contract file", type=list(readfile.SUPPORTED), label_visibility="collapsed")
+    st.caption("PDF, Word (.docx) or text. A scanned PDF has no text to read, so upload a text version instead.")
     if upload and st.button("Review this contract", type="primary", width="stretch"):
         try:
             with connect() as conn:
                 st.session_state["current"] = store.submit(
-                    conn, tenant, upload.name, upload.getvalue().decode("utf-8", "replace"),
+                    conn, tenant, upload.name, readfile.read_upload(upload.name, upload.getvalue()),
                     uploaded_by=email or st.session_state.get("reviewer", "") or "local")
                 tenants.audit(conn, tenant, email or "local", "upload", st.session_state["current"], upload.name)
         except store.RejectedUpload as error:
@@ -206,6 +207,8 @@ def show(submission_id: int):
     left, right = st.columns([3, 2], gap="large")
     with left:
         st.markdown("**Where it sits in your contract** (highlighted)")
+        if sub["filename"].lower().endswith((".pdf", ".docx")):
+            st.caption("Shown as the text read from your file, not its original layout.")
         st.markdown(f"<div class='doc'>{highlight_html(text, a['spans'])}</div>", unsafe_allow_html=True)
         if a["quotes"] and not a["spans"]:
             st.warning("The model's quote could not be found word for word, so it is not highlighted.")

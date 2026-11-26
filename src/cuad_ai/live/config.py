@@ -8,6 +8,14 @@ def max_chars():
     return env_int("LIVE_MAX_CHARS", 400_000)  # the longest CUAD contract is about 300k
 
 
+def max_file_mb():
+    return env_int("LIVE_MAX_FILE_MB", 10)  # size of the uploaded file itself, before its text is read out
+
+
+def max_pages():
+    return env_int("LIVE_MAX_PAGES", 300)  # PDF pages
+
+
 def daily_cap():
     return env_int("LIVE_DAILY_CAP", 20)  # uploads one client may make per rolling 24 hours (a client can override)
 

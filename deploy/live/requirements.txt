@@ -9,3 +9,5 @@ openai>=1.0
 pydantic>=2
 numpy
 fastembed>=0.3
+pypdf[crypto]>=4
+python-docx>=1.1
